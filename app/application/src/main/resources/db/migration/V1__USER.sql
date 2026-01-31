@@ -1,0 +1,18 @@
+DROP TABLE IF EXISTS users;
+
+CREATE TABLE users (
+    id UUID PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    cpf VARCHAR(14) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100),
+    user_status VARCHAR(100) NOT NULL,
+    user_role VARCHAR(100) NOT NULL,
+    user_type VARCHAR(100),
+    birth_date DATE,
+
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    inactivated_at TIMESTAMP WITH TIME ZONE
+);
