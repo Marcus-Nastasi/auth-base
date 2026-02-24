@@ -10,10 +10,8 @@ import com.auth.user.adapters.inbound.mappers.UserRequestMapper;
 import com.auth.user.adapters.inbound.mappers.UserResponseMapper;
 import com.auth.user.adapters.inbound.output.SuperSetResponseDto;
 import com.auth.user.adapters.inbound.output.UserByIdResponseDto;
-import com.auth.user.adapters.inbound.output.UserResponseDto;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-@Slf4j
 @RestController
 @RequestMapping(value = "/api/v1/user")
 public final class UserController {
@@ -47,6 +44,7 @@ public final class UserController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuperSetResponseDto<UserByIdResponseDto>> getById(@PathVariable("id") UUID userId,
                                                                             @RequestHeader(value = "Authorization") String token) {
         idEqualsOrAdminInterceptor.validate(new Object[]{userId, token});

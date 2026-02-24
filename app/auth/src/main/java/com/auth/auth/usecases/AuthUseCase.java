@@ -8,6 +8,7 @@ import com.auth.core.ports.inbound.auth.PasswordEncoderPort;
 import com.auth.core.ports.inbound.auth.TokenPort;
 import com.auth.core.ports.outbound.user.FindUserPort;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Marker;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -32,9 +33,14 @@ public class AuthUseCase implements AuthUseCasePort {
 
     @Override
     public String login(final String email, final String password) {
+        log.info(LOG_CODE, "Payload received: ", email);
+
         final User user = findUserPort.findUserByCpf(email).orElseThrow(NotFoundException::new);
 
+        log.info(LOG_CODE, "User found: ", user);
+
         isPasswordEqual(password, user);
+        log.info(LOG_CODE, "Generating token");
 
         return tokenPort.generate(user);
     }

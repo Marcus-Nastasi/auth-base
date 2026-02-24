@@ -12,6 +12,7 @@ import com.auth.core.ports.outbound.user.SaveUserPort;
 import com.auth.core.shared.Constants;
 import com.auth.core.shared.Errors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +22,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
-@Service
+@Component
 public class UserUseCase implements UserUseCasePort {
 
     private static final String LOG_CODE = "USER-USE-CASE";
@@ -46,25 +47,34 @@ public class UserUseCase implements UserUseCasePort {
 
     @Override
     public User findById(final UUID userId) {
+        log.info(LOG_CODE, "Searching user by id: ", userId);
+
         final User user = findUserPort.findById(userId).orElseThrow(NotFoundException::new);
 
-        log.info(String.format("%s: User found by id: %s", LOG_CODE, user.getId()), user);
+        log.info(LOG_CODE, "%s: User found by id: %s", user);
+
         return user;
     }
 
     @Override
     public User findByEmail(final String email) {
+        log.info(LOG_CODE, "Searching user by email: ", email);
+
         return findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
     }
 
     @Override
     @Transactional(propagation = Propagation.NESTED, rollbackFor = {RuntimeException.class, Exception.class})
     public User save(final User user) {
+        log.info(LOG_CODE, "User save payload received");
+
         User processed;
 
         if (user.getId() == null) {
+            log.info(LOG_CODE, "Creating user");
             processed = create(user);
         } else {
+            log.info(LOG_CODE, "Updating user");
             processed = update(user);
         }
 
@@ -74,17 +84,24 @@ public class UserUseCase implements UserUseCasePort {
     @Override
     @Transactional(rollbackFor = {RuntimeException.class, Exception.class})
     public User activate(final String email, final UUID userId) {
+        log.info(LOG_CODE, "Activating user: ", email);
+
         final User user = findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
+        log.info(LOG_CODE, "User found: ", user);
 
         if (!user.getId().equals(userId)) {
+            log.warn(LOG_CODE, "User found id is different than passed user id");
             throw new ForbiddenException();
         }
 
         if (user.getStatus().getCode() == UserStatus.ACTIVE.getCode()) {
+            log.warn(LOG_CODE, "User is already active");
             throw new RuntimeException(Errors.USER_ALREADY_ACTIVE.getMsg());
         }
 
         user.setStatus(UserStatus.ACTIVE);
+
+        log.info(LOG_CODE, "Updating user's status to: [ACTIVE]");
 
         return saveUserPort.save(user);
     }
