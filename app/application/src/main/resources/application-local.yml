@@ -1,6 +1,4 @@
 spring:
-  application:
-    name: app
 
   # local PostgreSQL
   datasource:
@@ -28,6 +26,7 @@ spring:
 
   # Email SMTP
   mail:
+    enable: true
     host: ${MAIL_HOST}
     port: ${MAIL_PORT}
     username: ${MAIL_USERNAME}
