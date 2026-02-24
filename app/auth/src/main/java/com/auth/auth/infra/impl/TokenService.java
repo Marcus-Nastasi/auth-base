@@ -49,15 +49,13 @@ public class TokenService implements TokenPort {
                 .withClaim("role", user.getUserRole().getRole())
                 .withExpiresAt(exp())
                 .sign(algorithm);
-        } catch (IllegalArgumentException e) {
-            return null;
-        } catch (JWTCreationException e) {
+        } catch (IllegalArgumentException | JWTCreationException e) {
             return null;
         }
     }
 
     @Override
-    public DecodedJWT validate(String token) {
+    public DecodedJWT validate(final String token) {
         try {
             return JWT.require(algorithm)
                     .withIssuer(issuer)
@@ -69,7 +67,7 @@ public class TokenService implements TokenPort {
     }
 
     @Override
-    public String emailConfirmation(User user) {
+    public String emailConfirmation(final User user) {
         try {
             return JWT.create()
                 .withKeyId(kid)
@@ -78,9 +76,7 @@ public class TokenService implements TokenPort {
                 .withClaim("email", user.getEmail())
                 .withExpiresAt(emailExpiration())
                 .sign(algorithm);
-        } catch (IllegalArgumentException e) {
-            return null;
-        } catch (JWTCreationException e) {
+        } catch (IllegalArgumentException | JWTCreationException e) {
             return null;
         }
     }
