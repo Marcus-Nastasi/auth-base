@@ -13,7 +13,6 @@ import com.auth.core.shared.Constants;
 import com.auth.core.shared.Errors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -108,9 +107,14 @@ public class UserUseCase implements UserUseCasePort {
 
     @Override
     public User inactivate(final String email) {
+        log.info(LOG_CODE, "Inactivating user: ", email);
+
         final User user = findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
+        log.info(LOG_CODE, "User found: ", user);
 
         user.setStatus(UserStatus.INACTIVE);
+        log.info(LOG_CODE, "Setting the UserStatus to INACTIVE");
+
         user.setInactivatedAt(LocalDateTime.now(Constants.CLOCK));
 
         return saveUserPort.save(user);
@@ -118,17 +122,26 @@ public class UserUseCase implements UserUseCasePort {
 
     @Override
     public void resendEmail(final String email) {
+        log.info(LOG_CODE, "Resending email: ", email);
+
         findUserPort.findByEmail(email).ifPresentOrElse(u -> {
+            log.info(LOG_CODE, "User is present: ", u);
+
             if (u.getStatus().getCode() == UserStatus.ACTIVE.getCode()) {
+                log.warn(LOG_CODE, "User already active");
+
                 throw new RuntimeException(Errors.USER_ALREADY_ACTIVE.getMsg());
             }
 
+            log.info(LOG_CODE, "Sending confirmation e-mail");
             confirmationEmailSenderPort.send(u);
         }, NotFoundException::new);
     }
 
     @Transactional(rollbackFor = {RuntimeException.class, Exception.class})
     private User create(final User user) {
+        log.info(LOG_CODE, "Creating user: ", user);
+
         final LocalDateTime moment = LocalDateTime.now(Constants.CLOCK);
         final Optional<User> existingUser = findUserPort.findUserByCpf(user.getCpf());
 
@@ -139,8 +152,10 @@ public class UserUseCase implements UserUseCasePort {
 
         user.setPassword(passwordEncoderPort.encode(user.getPassword()));
 
+        log.info(LOG_CODE, "Saving User", user);
         final User newUser = saveUserPort.save(User.newUser(user, moment));
 
+        log.info(LOG_CODE, "Sending confirmation e-mail");
         confirmationEmailSenderPort.send(newUser);
 
         return newUser;
@@ -148,7 +163,11 @@ public class UserUseCase implements UserUseCasePort {
 
     @Transactional(rollbackFor = {NotFoundException.class, Exception.class})
     private User update(final User user) {
+        log.info(LOG_CODE, "Updating User: ", user);
+
         final User existingUser = findUserPort.findById(user.getId()).orElseThrow(NotFoundException::new);
+        log.info(LOG_CODE, "User found: ", existingUser);
+
         final LocalDateTime moment = LocalDateTime.now(Constants.CLOCK);
 
         return saveUserPort.save(existingUser.update(user, moment));

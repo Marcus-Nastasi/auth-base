@@ -58,7 +58,18 @@ public final class User implements Serializable {
 
     public User() {}
 
-    public User(UUID id, String email, String cpf, String password, String firstName, String lastName, LocalDate birthDate, UserRole userRole, UserStatus status, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime inactivatedAt) {
+    public User(final UUID id,
+                final String email,
+                final String cpf,
+                final String password,
+                final String firstName,
+                final String lastName,
+                final LocalDate birthDate,
+                final UserRole userRole,
+                final UserStatus status,
+                final LocalDateTime createdAt,
+                final LocalDateTime updatedAt,
+                final LocalDateTime inactivatedAt) {
         this.id = id;
         this.email = email;
         this.cpf = cpf;
@@ -78,7 +89,18 @@ public final class User implements Serializable {
         if (this == object) return true;
         if (object == null || getClass() != object.getClass()) return false;
         User user = (User) object;
-        return Objects.equals(getId(), user.getId()) && Objects.equals(getEmail(), user.getEmail()) && Objects.equals(getCpf(), user.getCpf()) && Objects.equals(getPassword(), user.getPassword()) && Objects.equals(getFirstName(), user.getFirstName()) && Objects.equals(getLastName(), user.getLastName()) && Objects.equals(getBirthDate(), user.getBirthDate()) && Objects.equals(getUserRole(), user.getUserRole()) && Objects.equals(getStatus(), user.getStatus()) && Objects.equals(getCreatedAt(), user.getCreatedAt()) && Objects.equals(getUpdatedAt(), user.getUpdatedAt()) && Objects.equals(getInactivatedAt(), user.getInactivatedAt());
+        return Objects.equals(getId(), user.getId())
+                && Objects.equals(getEmail(), user.getEmail())
+                && Objects.equals(getCpf(), user.getCpf())
+                && Objects.equals(getPassword(), user.getPassword())
+                && Objects.equals(getFirstName(), user.getFirstName())
+                && Objects.equals(getLastName(), user.getLastName())
+                && Objects.equals(getBirthDate(), user.getBirthDate())
+                && Objects.equals(getUserRole(), user.getUserRole())
+                && Objects.equals(getStatus(), user.getStatus())
+                && Objects.equals(getCreatedAt(), user.getCreatedAt())
+                && Objects.equals(getUpdatedAt(), user.getUpdatedAt())
+                && Objects.equals(getInactivatedAt(), user.getInactivatedAt());
     }
 
     @Override
