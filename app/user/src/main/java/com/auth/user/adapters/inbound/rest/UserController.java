@@ -6,6 +6,7 @@ import com.auth.core.ports.inbound.auth.HttpInterceptor;
 import com.auth.core.ports.inbound.auth.TokenPort;
 import com.auth.core.ports.inbound.user.UserUseCasePort;
 import com.auth.user.adapters.inbound.input.UserRequestDto;
+import com.auth.user.adapters.inbound.input.UserUpdateRequestDto;
 import com.auth.user.adapters.inbound.mappers.UserRequestMapper;
 import com.auth.user.adapters.inbound.mappers.UserResponseMapper;
 import com.auth.user.adapters.inbound.output.SuperSetResponseDto;
@@ -47,7 +48,7 @@ public final class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuperSetResponseDto<UserByIdResponseDto>> getById(@PathVariable("id") UUID userId,
                                                                             @RequestHeader(value = "Authorization") String token) {
-        idEqualsOrAdminInterceptor.validate(new Object[]{userId, token});
+//        idEqualsOrAdminInterceptor.validate(new Object[]{userId, token});
 
         final User user = useCase.findById(userId);
 
@@ -89,17 +90,31 @@ public final class UserController {
         }
     }
 
-    @GetMapping("/inactivate")
+    @GetMapping(value = "/inactivate")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuperSetResponseDto<UserByIdResponseDto>> inactivate(@RequestParam("email") String email,
                                                                                @RequestHeader(value = "Authorization") String token) {
         final User fromEmail = useCase.findByEmail(email);
 
-        idEqualsOrAdminInterceptor.validate(new Object[]{fromEmail.getId(), token});
+//        idEqualsOrAdminInterceptor.validate(new Object[]{fromEmail.getId(), token});
 
         final User user = useCase.inactivate(email);
 
         final var response = new SuperSetResponseDto<>(UserResponseMapper.INSTANCE.toUserByIdResponse(user));
 
         return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping(value = "/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<SuperSetResponseDto<UserByIdResponseDto>> update(@PathVariable("id") UUID id,
+                                                                           @RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto) {
+        final User updated = useCase.save(UserRequestMapper.INSTANCE.toDomain(userUpdateRequestDto));
+
+        final SuperSetResponseDto<UserByIdResponseDto> response = new SuperSetResponseDto<>(
+                UserResponseMapper.INSTANCE.toUserByIdResponse(updated)
+        );
+
+        return ResponseEntity.accepted().body(response);
     }
 }

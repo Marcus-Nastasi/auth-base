@@ -20,6 +20,8 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
+import static java.lang.String.format;
+
 @Slf4j
 @Component
 public class UserUseCase implements UserUseCasePort {
@@ -46,18 +48,18 @@ public class UserUseCase implements UserUseCasePort {
 
     @Override
     public User findById(final UUID userId) {
-        log.info(LOG_CODE, "Searching user by id: ", userId);
+        log.info(format("Searching user by id: %s", userId));
 
         final User user = findUserPort.findById(userId).orElseThrow(NotFoundException::new);
 
-        log.info(LOG_CODE, "%s: User found by id: %s", user);
+        log.info(format("User found by id: %s", user));
 
         return user;
     }
 
     @Override
     public User findByEmail(final String email) {
-        log.info(LOG_CODE, "Searching user by email: ", email);
+        log.info(format("Searching user by email: %s", email));
 
         return findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
     }
@@ -65,15 +67,15 @@ public class UserUseCase implements UserUseCasePort {
     @Override
     @Transactional(propagation = Propagation.NESTED, rollbackFor = {RuntimeException.class, Exception.class})
     public User save(final User user) {
-        log.info(LOG_CODE, "User save payload received");
+        log.info("User save payload received");
 
         User processed;
 
         if (user.getId() == null) {
-            log.info(LOG_CODE, "Creating user");
+            log.info("Creating user");
             processed = create(user);
         } else {
-            log.info(LOG_CODE, "Updating user");
+            log.info("Updating user");
             processed = update(user);
         }
 
@@ -83,37 +85,37 @@ public class UserUseCase implements UserUseCasePort {
     @Override
     @Transactional(rollbackFor = {RuntimeException.class, Exception.class})
     public User activate(final String email, final UUID userId) {
-        log.info(LOG_CODE, "Activating user: ", email);
+        log.info(format("Activating user: %s", email));
 
         final User user = findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
-        log.info(LOG_CODE, "User found: ", user);
+        log.info(format("User found: %s", user));
 
         if (!user.getId().equals(userId)) {
-            log.warn(LOG_CODE, "User found id is different than passed user id");
+            log.warn("User found id is different than passed user id");
             throw new ForbiddenException();
         }
 
         if (user.getStatus().getCode() == UserStatus.ACTIVE.getCode()) {
-            log.warn(LOG_CODE, "User is already active");
+            log.warn("User is already active");
             throw new RuntimeException(Errors.USER_ALREADY_ACTIVE.getMsg());
         }
 
         user.setStatus(UserStatus.ACTIVE);
 
-        log.info(LOG_CODE, "Updating user's status to: [ACTIVE]");
+        log.info("Updating user's status to: [ACTIVE]");
 
         return saveUserPort.save(user);
     }
 
     @Override
     public User inactivate(final String email) {
-        log.info(LOG_CODE, "Inactivating user: ", email);
+        log.info(format("Inactivating user: %s", email));
 
         final User user = findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
-        log.info(LOG_CODE, "User found: ", user);
+        log.info(format("User found: %s", user));
 
         user.setStatus(UserStatus.INACTIVE);
-        log.info(LOG_CODE, "Setting the UserStatus to INACTIVE");
+        log.info("Setting the UserStatus to INACTIVE");
 
         user.setInactivatedAt(LocalDateTime.now(Constants.CLOCK));
 
@@ -122,40 +124,40 @@ public class UserUseCase implements UserUseCasePort {
 
     @Override
     public void resendEmail(final String email) {
-        log.info(LOG_CODE, "Resending email: ", email);
+        log.info(format("Resending email: %s", email));
 
         findUserPort.findByEmail(email).ifPresentOrElse(u -> {
-            log.info(LOG_CODE, "User is present: ", u);
+            log.info(format("User is present: %s", u));
 
             if (u.getStatus().getCode() == UserStatus.ACTIVE.getCode()) {
-                log.warn(LOG_CODE, "User already active");
+                log.warn("User already active");
 
                 throw new RuntimeException(Errors.USER_ALREADY_ACTIVE.getMsg());
             }
 
-            log.info(LOG_CODE, "Sending confirmation e-mail");
+            log.info("Sending confirmation e-mail");
             confirmationEmailSenderPort.send(u);
         }, NotFoundException::new);
     }
 
     @Transactional(rollbackFor = {RuntimeException.class, Exception.class})
     private User create(final User user) {
-        log.info(LOG_CODE, "Creating user: ", user);
+        log.info(format("Creating user: %s", user));
 
         final LocalDateTime moment = LocalDateTime.now(Constants.CLOCK);
         final Optional<User> existingUser = findUserPort.findUserByCpf(user.getCpf());
 
         if (existingUser.isPresent()) {
-            log.info(String.format("%s: user already exists with cpf %s", LOG_CODE, user.getCpf()));
+            log.info(format("%s: user already exists with cpf %s", LOG_CODE, user.getCpf()));
             throw new RuntimeException(Errors.USER_ALREADY_EXISTS.getMsg());
         }
 
         user.setPassword(passwordEncoderPort.encode(user.getPassword()));
 
-        log.info(LOG_CODE, "Saving User", user);
+        log.info(format("Saving User: %s", user));
         final User newUser = saveUserPort.save(User.newUser(user, moment));
 
-        log.info(LOG_CODE, "Sending confirmation e-mail");
+        log.info("Sending confirmation e-mail");
         confirmationEmailSenderPort.send(newUser);
 
         return newUser;
@@ -163,10 +165,10 @@ public class UserUseCase implements UserUseCasePort {
 
     @Transactional(rollbackFor = {NotFoundException.class, Exception.class})
     private User update(final User user) {
-        log.info(LOG_CODE, "Updating User: ", user);
+        log.info(format("Updating User: %s", user));
 
         final User existingUser = findUserPort.findById(user.getId()).orElseThrow(NotFoundException::new);
-        log.info(LOG_CODE, "User found: ", existingUser);
+        log.info(format("User found: %s", existingUser));
 
         final LocalDateTime moment = LocalDateTime.now(Constants.CLOCK);
 
