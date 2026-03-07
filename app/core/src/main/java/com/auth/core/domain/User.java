@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 @Builder
@@ -46,13 +47,15 @@ public final class User implements Serializable {
     }
 
     public User update(final User data, final LocalDateTime moment) {
-        this.setEmail(data.getEmail());
-        this.setCpf(data.getCpf());
-        this.setFirstName(data.getFirstName());
-        this.setLastName(data.getLastName());
-        this.setBirthDate(data.getBirthDate());
-        this.setStatus(data.getStatus());
-        this.setUpdatedAt(moment);
+        Optional.ofNullable(data.getEmail()).ifPresent(this::setEmail);
+        Optional.ofNullable(data.getCpf()).ifPresent(this::setCpf);
+        Optional.ofNullable(data.getFirstName()).ifPresent(this::setFirstName);
+        Optional.ofNullable(data.getLastName()).ifPresent(this::setLastName);
+        Optional.ofNullable(data.getBirthDate()).ifPresent(this::setBirthDate);
+        Optional.ofNullable(data.getStatus()).ifPresent(this::setStatus);
+
+        setUpdatedAt(moment);
+
         return this;
     }
 

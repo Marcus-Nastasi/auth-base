@@ -1,6 +1,7 @@
 package com.auth.user.adapters.outbound.repository.impl;
 
 import com.auth.core.domain.User;
+import com.auth.core.exceptions.InternalException;
 import com.auth.core.ports.outbound.user.FindUserPort;
 import com.auth.core.ports.outbound.user.SaveUserPort;
 import com.auth.core.shared.Errors;
@@ -53,14 +54,14 @@ public class UserRepo implements FindUserPort, SaveUserPort {
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY, rollbackFor = Exception.class)
-    public User save(final User user) {
+    public User save(final User user) throws InternalException {
         try {
             final UserEntity userEntity = UserEntityMapper.INSTANCE.toEntity(user);
 
             final UserEntity savedUserEntity = entityManager.merge(userEntity);
 
             if (savedUserEntity == null) {
-//                throw new InternalError(Errors.COULD_NOT_SAVE_USER.getMessage());
+                throw new InternalException(Errors.COULD_NOT_SAVE_USER);
             }
 
             entityManager.flush();
@@ -68,7 +69,7 @@ public class UserRepo implements FindUserPort, SaveUserPort {
             return UserEntityMapper.INSTANCE.toDomain(savedUserEntity);
         } catch (Exception e) {
             log.error(LOG_CODE + ": could not save user, internal error.");
-            throw new RuntimeException(e);
+            throw new InternalException(e);
         }
     }
 }

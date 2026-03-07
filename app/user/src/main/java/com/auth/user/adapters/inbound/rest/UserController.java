@@ -23,7 +23,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping(value = "/api/v1/user")
-public final class UserController {
+public class UserController {
 
     private final UserUseCasePort useCase;
 
@@ -76,7 +76,7 @@ public final class UserController {
                 <h2>E-mail ativo, feche a aba e faça o login.</h2>
             """);
         } catch (Exception e) {
-            throw new ForbiddenException();
+            throw new ForbiddenException(e.getMessage(), e);
         }
     }
 
@@ -109,7 +109,10 @@ public final class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuperSetResponseDto<UserByIdResponseDto>> update(@PathVariable("id") UUID id,
                                                                            @RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto) {
-        final User updated = useCase.save(UserRequestMapper.INSTANCE.toDomain(userUpdateRequestDto));
+        final User userReceived = UserRequestMapper.INSTANCE.toDomain(userUpdateRequestDto);
+        userReceived.setId(id);
+
+        final User updated = useCase.save(userReceived);
 
         final SuperSetResponseDto<UserByIdResponseDto> response = new SuperSetResponseDto<>(
                 UserResponseMapper.INSTANCE.toUserByIdResponse(updated)

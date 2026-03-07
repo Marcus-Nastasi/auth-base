@@ -55,14 +55,14 @@ public class TokenService implements TokenPort {
     }
 
     @Override
-    public DecodedJWT validate(final String token) {
+    public DecodedJWT validate(final String token) throws ForbiddenException {
         try {
             return JWT.require(algorithm)
                     .withIssuer(issuer)
                     .build()
                     .verify(token);
         } catch (JWTVerificationException e) {
-            throw new ForbiddenException();
+            throw new ForbiddenException("");
         }
     }
 
@@ -82,15 +82,21 @@ public class TokenService implements TokenPort {
     }
 
     private Instant exp() {
-        return LocalDateTime.now().plusHours(10).toInstant(ZoneOffset.of("-03:00"));
+        return LocalDateTime.now()
+                .plusHours(10)
+                .toInstant(ZoneOffset.of("-03:00"));
     }
 
     private Instant emailExpiration() {
-        return LocalDateTime.now().plusHours(1).toInstant(ZoneOffset.of("-03:00"));
+        return LocalDateTime.now()
+                .plusHours(1)
+                .toInstant(ZoneOffset.of("-03:00"));
     }
 
     private Instant expRefresh() {
-        return LocalDateTime.now().plusDays(10).toInstant(ZoneOffset.of("-03:00"));
+        return LocalDateTime.now()
+                .plusDays(10)
+                .toInstant(ZoneOffset.of("-03:00"));
     }
 
     public RSAPublicKey getPublicKey() {

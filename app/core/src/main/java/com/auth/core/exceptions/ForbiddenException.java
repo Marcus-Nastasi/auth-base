@@ -1,9 +1,8 @@
 package com.auth.core.exceptions;
 
-public class ForbiddenException extends RuntimeException {
+import com.auth.core.exceptions.DomainException;
 
-    public ForbiddenException() {
-    }
+public class ForbiddenException extends DomainException {
 
     public ForbiddenException(String message) {
         super(message);

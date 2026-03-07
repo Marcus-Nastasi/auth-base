@@ -8,7 +8,6 @@ import com.auth.core.ports.inbound.auth.PasswordEncoderPort;
 import com.auth.core.ports.inbound.auth.TokenPort;
 import com.auth.core.ports.outbound.user.FindUserPort;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Marker;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -47,7 +46,7 @@ public class AuthUseCase implements AuthUseCasePort {
 
     private void isPasswordEqual(final String password, final User user) {
         if (Boolean.FALSE.equals(passwordEncoderPort.matches(password, user.getPassword()))) {
-            throw new ForbiddenException();
+            throw new ForbiddenException("");
         }
     }
 }

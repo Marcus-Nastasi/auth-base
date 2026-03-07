@@ -1,10 +1,12 @@
 package com.auth.user.adapters.outbound.messaging.output;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 import java.time.Instant;
 
+@JsonInclude
 public record EmailPendingProducerDto(
         @JsonProperty("event_type")
         String eventType,
@@ -17,6 +19,7 @@ public record EmailPendingProducerDto(
         EmailPendingData data
 ) implements Serializable {
 
+    @JsonInclude
     public record EmailPendingData(
             @JsonProperty("user_id")
             String userId,

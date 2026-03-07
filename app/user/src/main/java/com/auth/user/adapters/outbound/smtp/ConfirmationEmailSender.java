@@ -50,7 +50,7 @@ public class ConfirmationEmailSender implements ConfirmationEmailSenderPort {
     public void send(final User data) {
         try {
             final String token = tokenPort.emailConfirmation(data);
-            if (token == null) throw new ForbiddenException();
+            if (token == null) throw new ForbiddenException("");
 
             final Properties props = setProperties();
             final Session session = createSession(props);
@@ -67,8 +67,8 @@ public class ConfirmationEmailSender implements ConfirmationEmailSenderPort {
         final Properties props = new Properties();
         props.put(Constants.EMAIL_HOST_KEY, host);
         props.put(Constants.EMAIL_PORT_KEY, port);
-        props.put(Constants.EMAIL_AUTH_KEY, "true");
-        props.put(Constants.EMAIL_STARTTLS_KEY, "true");
+        props.put(Constants.EMAIL_AUTH_KEY, Boolean.TRUE.toString().toLowerCase());
+        props.put(Constants.EMAIL_STARTTLS_KEY, Boolean.TRUE.toString().toLowerCase());
         return props;
     }
 
@@ -80,7 +80,10 @@ public class ConfirmationEmailSender implements ConfirmationEmailSenderPort {
         });
     }
 
-    private Message getMessage(final Session session, final User user, final String token) throws UnsupportedEncodingException, MessagingException {
+    private Message getMessage(final Session session,
+                               final User user,
+                               final String token) throws UnsupportedEncodingException, MessagingException {
+
         final Message message = new MimeMessage(session);
         message.setFrom(new InternetAddress(username, team));
         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(user.getEmail()));

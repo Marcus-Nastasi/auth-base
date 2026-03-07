@@ -2,8 +2,8 @@ package com.auth.user.usecases;
 
 import com.auth.core.domain.User;
 import com.auth.core.domain.enums.UserStatus;
-import com.auth.core.exceptions.ForbiddenException;
 import com.auth.core.exceptions.NotFoundException;
+import com.auth.user.adapters.inbound.exceptions.UnprocessableEntityException;
 import com.auth.core.ports.inbound.auth.PasswordEncoderPort;
 import com.auth.core.ports.inbound.user.UserUseCasePort;
 import com.auth.core.ports.outbound.auth.ConfirmationEmailSenderPort;
@@ -90,14 +90,14 @@ public class UserUseCase implements UserUseCasePort {
         final User user = findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
         log.info(format("User found: %s", user));
 
-        if (!user.getId().equals(userId)) {
-            log.warn("User found id is different than passed user id");
-            throw new ForbiddenException();
-        }
+//        if (!user.getId().equals(userId)) {
+//            log.warn("User found id is different than passed user id");
+//            throw new ForbiddenException();
+//        }
 
         if (user.getStatus().getCode() == UserStatus.ACTIVE.getCode()) {
             log.warn("User is already active");
-            throw new RuntimeException(Errors.USER_ALREADY_ACTIVE.getMsg());
+            throw new UnprocessableEntityException(Errors.USER_ALREADY_ACTIVE);
         }
 
         user.setStatus(UserStatus.ACTIVE);
@@ -132,7 +132,7 @@ public class UserUseCase implements UserUseCasePort {
             if (u.getStatus().getCode() == UserStatus.ACTIVE.getCode()) {
                 log.warn("User already active");
 
-                throw new RuntimeException(Errors.USER_ALREADY_ACTIVE.getMsg());
+                throw new UnprocessableEntityException(Errors.USER_ALREADY_ACTIVE);
             }
 
             log.info("Sending confirmation e-mail");
@@ -149,7 +149,7 @@ public class UserUseCase implements UserUseCasePort {
 
         if (existingUser.isPresent()) {
             log.info(format("%s: user already exists with cpf %s", LOG_CODE, user.getCpf()));
-            throw new RuntimeException(Errors.USER_ALREADY_EXISTS.getMsg());
+            throw new UnprocessableEntityException(Errors.USER_ALREADY_EXISTS);
         }
 
         user.setPassword(passwordEncoderPort.encode(user.getPassword()));
