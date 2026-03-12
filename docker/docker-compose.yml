@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+
+  auth-base-postgres:
+    image: postgres:15
+    container_name: auth-base-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data-auth-base:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - auth-base-network
+
+  auth-base-backend:
+    build:
+      context: ../app/
+      dockerfile: Dockerfile
+    image: auth-base-backend:latest
+    container_name: auth-base-backend
+    ports:
+      - "8080:8080"
+    environment:
+      ENV: dev
+      SPRING_REDIS_HOST: ads-report-redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_CACHE_REDIS_TIME_TO_LIVE: 12h
+    networks:
+      - auth-base-network
+    depends_on:
+      - auth-base-postgres
+
+networks:
+  auth-base-network:
+    driver: bridge
+
+volumes:
+  postgres-data-auth-base:

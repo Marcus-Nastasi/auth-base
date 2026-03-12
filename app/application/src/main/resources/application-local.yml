@@ -1,6 +1,4 @@
 spring:
-  application:
-    name: app
 
   # local PostgreSQL
   datasource:
@@ -17,6 +15,11 @@ spring:
           issuer-uri: https://iam.local
       kid: auth-base-kid
       issuer: https://iam.local
+    key:
+      public:
+        path: /home/rolemberg/Documentos/Programming/projects/java/auth-base/app/public.pem
+      private:
+        path: /home/rolemberg/Documentos/Programming/projects/java/auth-base/app/private.pem
 
   # JPA
   jpa:
@@ -28,6 +31,7 @@ spring:
 
   # Email SMTP
   mail:
+    enable: true
     host: ${MAIL_HOST}
     port: ${MAIL_PORT}
     username: ${MAIL_USERNAME}

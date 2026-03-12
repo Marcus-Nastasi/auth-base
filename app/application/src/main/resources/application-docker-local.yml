@@ -1,0 +1,45 @@
+spring:
+
+  # local PostgreSQL
+  datasource:
+    url: jdbc:postgresql://auth-base-postgres:5432/postgres
+    username: postgres
+    password: 123
+    driver-class-name: org.postgresql.Driver
+
+  # Security
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://iam.local
+      kid: auth-base-kid
+      issuer: https://iam.local
+    key:
+      public:
+        path: /home/app/public.pem
+      private:
+        path: /home/app/private.pem
+
+  # JPA
+  jpa:
+    #hibernate:
+    #  ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Email SMTP
+  mail:
+    enable: true
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    team: ${MAIL_TEAM}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true

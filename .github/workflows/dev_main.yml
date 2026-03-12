@@ -1,0 +1,28 @@
+name: Ci opens PR from develop to main
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Create Pull Request
+        run: |
+          gh pr create \
+            --base main \
+            --head develop \
+            --title "Develop → Main" \
+            --body "Automated PR"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
