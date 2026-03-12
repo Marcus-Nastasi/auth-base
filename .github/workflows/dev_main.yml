@@ -18,11 +18,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr create \
             --base main \
             --head develop \
             --title "Develop → Main" \
             --body "Automated PR"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
