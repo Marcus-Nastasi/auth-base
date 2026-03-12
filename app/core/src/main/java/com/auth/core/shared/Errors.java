@@ -1,6 +1,8 @@
 package com.auth.core.shared;
 
-public enum Errors {
+import java.io.Serializable;
+
+public enum Errors implements Serializable {
 
     USER_ALREADY_ACTIVE("user already activated"),
     USER_ALREADY_EXISTS("user already exists"),

@@ -47,7 +47,7 @@ public class UserUseCase implements UserUseCasePort {
     }
 
     @Override
-    public User findById(final UUID userId) {
+    public User findById(final UUID userId) throws NotFoundException {
         log.info(format("Searching user by id: %s", userId));
 
         final User user = findUserPort.findById(userId).orElseThrow(NotFoundException::new);
@@ -58,7 +58,7 @@ public class UserUseCase implements UserUseCasePort {
     }
 
     @Override
-    public User findByEmail(final String email) {
+    public User findByEmail(final String email) throws NotFoundException {
         log.info(format("Searching user by email: %s", email));
 
         return findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
@@ -84,7 +84,7 @@ public class UserUseCase implements UserUseCasePort {
 
     @Override
     @Transactional(rollbackFor = {RuntimeException.class, Exception.class})
-    public User activate(final String email, final UUID userId) {
+    public User activate(final String email, final UUID userId) throws NotFoundException, UnprocessableEntityException {
         log.info(format("Activating user: %s", email));
 
         final User user = findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
@@ -108,7 +108,7 @@ public class UserUseCase implements UserUseCasePort {
     }
 
     @Override
-    public User inactivate(final String email) {
+    public User inactivate(final String email) throws NotFoundException {
         log.info(format("Inactivating user: %s", email));
 
         final User user = findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
@@ -123,7 +123,7 @@ public class UserUseCase implements UserUseCasePort {
     }
 
     @Override
-    public void resendEmail(final String email) {
+    public void resendEmail(final String email) throws UnprocessableEntityException, NotFoundException {
         log.info(format("Resending email: %s", email));
 
         findUserPort.findByEmail(email).ifPresentOrElse(u -> {
@@ -131,7 +131,6 @@ public class UserUseCase implements UserUseCasePort {
 
             if (u.getStatus().getCode() == UserStatus.ACTIVE.getCode()) {
                 log.warn("User already active");
-
                 throw new UnprocessableEntityException(Errors.USER_ALREADY_ACTIVE);
             }
 
@@ -141,7 +140,7 @@ public class UserUseCase implements UserUseCasePort {
     }
 
     @Transactional(rollbackFor = {RuntimeException.class, Exception.class})
-    private User create(final User user) {
+    private User create(final User user) throws UnprocessableEntityException {
         log.info(format("Creating user: %s", user));
 
         final LocalDateTime moment = LocalDateTime.now(Constants.CLOCK);

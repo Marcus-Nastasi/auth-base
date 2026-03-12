@@ -28,7 +28,7 @@ public class IamController {
         this.tokenPort = tokenPort;
     }
 
-    @PostMapping()
+    @PostMapping
     public ResponseEntity<AuthResponseDto> login(@RequestBody @Valid final AuthRequestDto dto) {
         final String token = authUseCasePort.login(dto.cpf(), dto.password());
         final DecodedJWT d = (DecodedJWT) tokenPort.validate(token);

@@ -2,7 +2,7 @@ spring:
 
   # local PostgreSQL
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: jdbc:postgresql://auth-base-postgres:5432/postgres
     username: postgres
     password: 123
     driver-class-name: org.postgresql.Driver
@@ -17,9 +17,9 @@ spring:
       issuer: https://iam.local
     key:
       public:
-        path: /home/rolemberg/Documentos/Programming/projects/java/auth-base/app/public.pem
+        path: /home/app/public.pem
       private:
-        path: /home/rolemberg/Documentos/Programming/projects/java/auth-base/app/private.pem
+        path: /home/app/private.pem
 
   # JPA
   jpa:

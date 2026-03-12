@@ -31,10 +31,16 @@ public class TokenService implements TokenPort {
     @Value("${spring.security.oauth2.issuer}")
     private String issuer;
 
-    public TokenService() throws Exception {
-        this.publicKey = PemUtils.readPublicKey("/home/rolemberg/Documentos/Programming/projects/java/auth-base/app/public.pem");
-        RSAPrivateKey privateKey = PemUtils.readPrivateKey("/home/rolemberg/Documentos/Programming/projects/java/auth-base/app/private.pem");
-        this.algorithm = Algorithm.RSA256(publicKey, privateKey);
+    public TokenService(@Value("${spring.security.key.public.path}") String publicKeyPath,
+                        @Value("${spring.security.key.private.path}") String privateKeyPath) throws RuntimeException {
+        try {
+            this.publicKey = PemUtils.readPublicKey(publicKeyPath);
+            final RSAPrivateKey privateKey = PemUtils.readPrivateKey(privateKeyPath);
+
+            this.algorithm = Algorithm.RSA256(publicKey, privateKey);
+        } catch (final Exception e) {
+            throw new RuntimeException("Unable to get private and public keys");
+        }
     }
 
     @Override
