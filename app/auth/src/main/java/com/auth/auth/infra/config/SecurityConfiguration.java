@@ -1,6 +1,7 @@
 package com.auth.auth.infra.config;
 
 import com.auth.auth.infra.impl.TokenService;
+import com.auth.core.domain.enums.UserRole;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -31,6 +32,7 @@ public class SecurityConfiguration {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(http -> http
                         .requestMatchers(HttpMethod.POST, "/api/v1/user").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/user").hasRole(UserRole.ADMIN.getRole())
                         .requestMatchers(HttpMethod.GET, "/test").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/user/activate", "/api/v1/user/resend").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/user/resend").permitAll()

@@ -1,10 +1,13 @@
 package com.auth.user.adapters.inbound.rest;
 
+import com.auth.core.domain.PageResponse;
 import com.auth.core.domain.User;
 import com.auth.core.exceptions.ForbiddenException;
+import com.auth.core.exceptions.NotFoundException;
 import com.auth.core.ports.inbound.auth.HttpInterceptor;
 import com.auth.core.ports.inbound.auth.TokenPort;
 import com.auth.core.ports.inbound.user.UserUseCasePort;
+import com.auth.core.shared.Errors;
 import com.auth.user.adapters.inbound.input.UserRequestDto;
 import com.auth.user.adapters.inbound.input.UserUpdateRequestDto;
 import com.auth.user.adapters.inbound.mappers.UserRequestMapper;
@@ -39,16 +42,21 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> getAll() {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<PageResponse<User>> getAll(@RequestParam(value = "page", defaultValue = "1") final int page,
+                                                     @RequestParam(value = "size", defaultValue = "10") final int size) {
+        final PageResponse<User> response = useCase.findAll(page, size);
+
+        if (response.data().isEmpty()) {
+            throw new NotFoundException(Errors.USERS_NOT_FOUND);
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuperSetResponseDto<UserByIdResponseDto>> getById(@PathVariable("id") UUID userId,
                                                                             @RequestHeader(value = "Authorization") String token) {
-//        idEqualsOrAdminInterceptor.validate(new Object[]{userId, token});
+        idEqualsOrAdminInterceptor.validate(new Object[]{userId, token});
 
         final User user = useCase.findById(userId);
 

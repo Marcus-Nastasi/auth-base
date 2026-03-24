@@ -1,6 +1,8 @@
 package com.auth.user.usecases;
 
+import com.auth.core.domain.PageResponse;
 import com.auth.core.domain.User;
+import com.auth.core.domain.enums.UserRole;
 import com.auth.core.domain.enums.UserStatus;
 import com.auth.core.exceptions.NotFoundException;
 import com.auth.user.adapters.inbound.exceptions.UnprocessableEntityException;
@@ -17,8 +19,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static java.lang.String.format;
 
@@ -47,6 +48,25 @@ public class UserUseCase implements UserUseCasePort {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public PageResponse<User> findAll(int page, int size) {
+        log.info("Searching all users");
+
+        page = page > 0 ? page : 1;
+        size = size > 0 ? size : 10;
+
+        if (size > 50) size = 50;
+
+        final Set<User> users = findUserPort.findAll(page, size);
+
+        if (users == null || users.isEmpty())
+            return new PageResponse<>(page, size, 0, HashSet.newHashSet(0));
+
+        return new PageResponse<>(page, size, (page + 1), users);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public User findById(final UUID userId) throws NotFoundException {
         log.info(format("Searching user by id: %s", userId));
 
@@ -58,6 +78,7 @@ public class UserUseCase implements UserUseCasePort {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public User findByEmail(final String email) throws NotFoundException {
         log.info(format("Searching user by email: %s", email));
 
@@ -65,7 +86,10 @@ public class UserUseCase implements UserUseCasePort {
     }
 
     @Override
-    @Transactional(propagation = Propagation.NESTED, rollbackFor = {RuntimeException.class, Exception.class})
+    @Transactional(
+        propagation = Propagation.NESTED,
+        rollbackFor = {RuntimeException.class, Exception.class}
+    )
     public User save(final User user) {
         log.info("User save payload received");
 
@@ -108,6 +132,7 @@ public class UserUseCase implements UserUseCasePort {
     }
 
     @Override
+    @Transactional(rollbackFor = {RuntimeException.class, Exception.class})
     public User inactivate(final String email) throws NotFoundException {
         log.info(format("Inactivating user: %s", email));
 
@@ -141,6 +166,10 @@ public class UserUseCase implements UserUseCasePort {
 
     @Transactional(rollbackFor = {RuntimeException.class, Exception.class})
     private User create(final User user) throws UnprocessableEntityException {
+        if (user == null) throw new UnprocessableEntityException(Errors.COULD_NOT_SAVE_USER);
+
+        if (user.getUserRole() == null) user.setUserRole(UserRole.USER);
+
         log.info(format("Creating user: %s", user));
 
         final LocalDateTime moment = LocalDateTime.now(Constants.CLOCK);
