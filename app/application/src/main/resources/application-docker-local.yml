@@ -17,9 +17,9 @@ spring:
       issuer: https://iam.local
     key:
       public:
-        path: /home/app/public.pem
+        path: ./app/public.pem
       private:
-        path: /home/app/private.pem
+        path: ./app/private.pem
 
   # JPA
   jpa:
