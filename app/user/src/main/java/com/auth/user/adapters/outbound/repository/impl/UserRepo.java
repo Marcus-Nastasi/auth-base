@@ -11,12 +11,15 @@ import com.auth.user.adapters.outbound.repository.UserJpaRepo;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -32,6 +35,13 @@ public class UserRepo implements FindUserPort, SaveUserPort {
     public UserRepo(UserJpaRepo userJpaRepo, EntityManager entityManager) {
         this.userJpaRepo = userJpaRepo;
         this.entityManager = entityManager;
+    }
+
+    @Override
+    public Set<User> findAll(final int page, final int size) {
+        return userJpaRepo.findAll(PageRequest.of(page, size))
+                .map(UserEntityMapper.INSTANCE::toDomain).stream()
+                .collect(Collectors.toSet());
     }
 
     @Override
