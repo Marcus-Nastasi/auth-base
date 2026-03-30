@@ -32,7 +32,7 @@ public class UserRepo implements FindUserPort, SaveUserPort {
     @PersistenceContext
     private final EntityManager entityManager;
 
-    public UserRepo(UserJpaRepo userJpaRepo, EntityManager entityManager) {
+    public UserRepo(final UserJpaRepo userJpaRepo, final EntityManager entityManager) {
         this.userJpaRepo = userJpaRepo;
         this.entityManager = entityManager;
     }

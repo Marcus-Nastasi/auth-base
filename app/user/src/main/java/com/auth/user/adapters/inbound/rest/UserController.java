@@ -20,10 +20,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+@Validated
 @RestController
 @RequestMapping(value = "/api/v1/user")
 public class UserController {
@@ -67,7 +69,6 @@ public class UserController {
     public ResponseEntity<SuperSetResponseDto<UserByIdResponseDto>> registre(@RequestBody @Valid UserRequestDto dto) {
         final User user = useCase.save(UserRequestMapper.INSTANCE.toDomain(dto));
         final var response = new SuperSetResponseDto<>(UserResponseMapper.INSTANCE.toUserByIdResponse(user));
-
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -80,9 +81,11 @@ public class UserController {
 
             final User user = useCase.activate(email, userId);
 
-            return ResponseEntity.accepted().body("""
-                <h2>E-mail ativo, feche a aba e faça o login.</h2>
-            """);
+            final var responseMessage = String.format("""
+                <h2>Seu e-mail %s está ativo, feche a aba e faça o login.</h2>
+            """, user.getEmail());
+
+            return ResponseEntity.accepted().body(responseMessage);
         } catch (Exception e) {
             throw new ForbiddenException(e.getMessage(), e);
         }
@@ -102,7 +105,7 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuperSetResponseDto<UserByIdResponseDto>> inactivate(@RequestParam("email") String email,
                                                                                @RequestHeader(value = "Authorization") String token) {
-        final User fromEmail = useCase.findByEmail(email);
+//        final User fromEmail = useCase.findByEmail(email);
 
 //        idEqualsOrAdminInterceptor.validate(new Object[]{fromEmail.getId(), token});
 
@@ -114,15 +117,17 @@ public class UserController {
     }
 
     @PatchMapping(value = "/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuperSetResponseDto<UserByIdResponseDto>> update(@PathVariable("id") UUID id,
-                                                                           @RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto) {
+                                                                           @RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto,
+                                                                           @RequestHeader(value = "Authorization") String token) {
+        idEqualsOrAdminInterceptor.validate(new Object[]{id, token});
+
         final User userReceived = UserRequestMapper.INSTANCE.toDomain(userUpdateRequestDto);
         userReceived.setId(id);
 
         final User updated = useCase.save(userReceived);
 
-        final SuperSetResponseDto<UserByIdResponseDto> response = new SuperSetResponseDto<>(
+        final var response = new SuperSetResponseDto<UserByIdResponseDto>(
                 UserResponseMapper.INSTANCE.toUserByIdResponse(updated)
         );
 

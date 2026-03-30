@@ -40,7 +40,7 @@ public class IdEqualsOrAdminInterceptor implements HttpInterceptor {
         }
     }
 
-    private String getToken(final String tokenHeader) {
+    private String getToken(final String tokenHeader) throws ForbiddenException {
         if (tokenHeader == null)
             throw new ForbiddenException("");
 
