@@ -2,6 +2,7 @@ package com.auth.user.adapters.inbound.input;
 
 import com.auth.core.domain.enums.UserRole;
 import com.auth.core.annotations.ValidEmail;
+import com.auth.core.annotations.ValidCpf;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Size;
@@ -28,8 +29,9 @@ public record UserRequestDto(
         @JsonProperty(value = "last_name")
         String lastName,
 
-        @Size(min = 11, max = 14)
         @JsonProperty(value = "cpf")
+        @ValidCpf(message = "Invalid cpf")
+        @Size(min = 11, max = 14, message = "Size must be between 11 and 14 chars")
         String cpf,
 
         @JsonProperty(value = "birth_date")
