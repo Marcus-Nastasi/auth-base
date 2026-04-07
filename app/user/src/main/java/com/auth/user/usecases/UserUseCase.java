@@ -15,6 +15,7 @@ import com.auth.core.ports.outbound.user.FindUserPort;
 import com.auth.core.ports.outbound.user.SaveUserPort;
 import com.auth.core.shared.Constants;
 import com.auth.core.shared.Errors;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,18 +50,23 @@ public class UserUseCase implements UserUseCasePort {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "get_users")
     public PageResponse<User> findAll(int page, int size) {
-        Logger.info(LOG_CODE, "Searching all users");
+        Logger.info(LOG_CODE, "Searching users");
 
-        page = page > 0 ? page : 1;
+        page = page >= 0 ? page : 1;
         size = size > 0 ? size : 10;
 
         if (size > 50) size = 50;
 
         final Set<User> users = findUserPort.findAll(page, size);
 
-        if (users == null || users.isEmpty())
+        if (users == null || users.isEmpty()) {
+            Logger.info(LOG_CODE, "Not found users on db, returning an empty PageResponse object");
             return new PageResponse<>(page, size, 0, HashSet.newHashSet(0));
+        }
+
+        Logger.info(LOG_CODE, String.format("Users found on page: %s and size: %s", page, size), users);
 
         return new PageResponse<>(page, size, (page + 1), users);
     }
@@ -192,7 +198,7 @@ public class UserUseCase implements UserUseCasePort {
     }
 
     @Transactional(rollbackFor = {NotFoundException.class, Exception.class})
-    private User update(final User user) {
+    private User update(final User user) throws InternalException {
         Logger.info(LOG_CODE, format("Updating user: %s", user.getEmail()), user);
 
         final User existingUser = findUserPort.findById(user.getId()).orElseThrow(NotFoundException::new);
@@ -207,7 +213,7 @@ public class UserUseCase implements UserUseCasePort {
             Logger.info(LOG_CODE, "Successfully updated user: ", updated.get());
             return updated.get();
         } else {
-            Logger.info(LOG_CODE, "Failed updating user");
+            Logger.error(LOG_CODE, "Failed updating user");
             throw new InternalException(Errors.COULD_NOT_UPDATE_USER);
         }
     }

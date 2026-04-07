@@ -7,12 +7,11 @@ import com.auth.core.ports.inbound.auth.AuthUseCasePort;
 import com.auth.core.ports.inbound.auth.PasswordEncoderPort;
 import com.auth.core.ports.inbound.auth.TokenPort;
 import com.auth.core.ports.outbound.user.FindUserPort;
-import lombok.extern.slf4j.Slf4j;
+import com.auth.core.shared.Logger;
 import org.springframework.stereotype.Component;
 
 import static java.lang.String.format;
 
-@Slf4j
 @Component
 public class AuthUseCase implements AuthUseCasePort {
 
@@ -34,14 +33,14 @@ public class AuthUseCase implements AuthUseCasePort {
 
     @Override
     public String login(final String email, final String password) {
-        log.info(format("Payload received: %s", email));
+        Logger.info(LOG_CODE, format("Payload received: %s", email));
 
         final User user = findUserPort.findUserByCpf(email).orElseThrow(NotFoundException::new);
 
-        log.info(format("User found: %s", user));
+        Logger.info(LOG_CODE, format("User found: %s", user.getId()), user);
 
         isPasswordEqual(password, user);
-        log.info("Generating token");
+        Logger.info(LOG_CODE, "Generating token");
 
         return tokenPort.generate(user);
     }

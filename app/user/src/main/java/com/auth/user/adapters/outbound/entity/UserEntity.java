@@ -2,6 +2,10 @@ package com.auth.user.adapters.outbound.entity;
 
 import com.auth.core.domain.enums.UserRole;
 import com.auth.core.domain.enums.UserStatus;
+import com.auth.core.exceptions.InternalException;
+import com.auth.core.shared.AppError;
+import com.auth.core.shared.Errors;
+import com.auth.core.shared.Logger;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -16,14 +20,17 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+
+import static java.lang.String.format;
 
 @Data
 @Entity
 @Table(name = "users")
 public class UserEntity implements UserDetails, Serializable {
+
+    private static final SimpleGrantedAuthority ADMIN = new SimpleGrantedAuthority("ROLE_ADMIN");
+    private static final SimpleGrantedAuthority USER = new SimpleGrantedAuthority("ROLE_USER");
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -70,10 +77,20 @@ public class UserEntity implements UserDetails, Serializable {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if (this.userRole == UserRole.ADMIN) return List.of(
-                new SimpleGrantedAuthority("ADMIN"),
-                new SimpleGrantedAuthority("USER"));
-        return List.of(new SimpleGrantedAuthority("USER"));
+        switch (this.userRole) {
+            case UserRole.ADMIN: return List.of(ADMIN, USER);
+            case UserRole.USER: return List.of(USER);
+            default: {
+                final var msg = format("UserRole does not equals permitted values. Permitted values are: %s",
+                                       Arrays.toString(UserRole.values()));
+                Logger.error("USER-ENTITY", msg, Map.of("errors", List.of(AppError.builder()
+                        .message(msg)
+                        .field("UserRole")
+                        .attempted(this.userRole.getRole()))));
+
+                throw new InternalException(msg);
+            }
+        }
     }
 
     @CreationTimestamp

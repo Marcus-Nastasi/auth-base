@@ -3,11 +3,9 @@ package com.auth.user.adapters.inbound.rest;
 import com.auth.core.domain.PageResponse;
 import com.auth.core.domain.User;
 import com.auth.core.exceptions.ForbiddenException;
-import com.auth.core.exceptions.NotFoundException;
 import com.auth.core.ports.inbound.auth.HttpInterceptor;
 import com.auth.core.ports.inbound.auth.TokenPort;
 import com.auth.core.ports.inbound.user.UserUseCasePort;
-import com.auth.core.shared.Errors;
 import com.auth.user.adapters.inbound.input.UserRequestDto;
 import com.auth.user.adapters.inbound.input.UserUpdateRequestDto;
 import com.auth.user.adapters.inbound.mappers.UserRequestMapper;
@@ -16,14 +14,17 @@ import com.auth.user.adapters.inbound.output.SuperSetResponseDto;
 import com.auth.user.adapters.inbound.output.UserByIdResponseDto;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
+import java.util.stream.Collectors;
+
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @Validated
 @RestController
@@ -34,28 +35,36 @@ public class UserController {
 
     private final TokenPort tokenPort;
 
-    @Qualifier("IdEqualsOrAdminInterceptor")
     private final HttpInterceptor idEqualsOrAdminInterceptor;
 
-    public UserController(final UserUseCasePort useCase, final TokenPort tokenPort, final HttpInterceptor idEqualsOrAdminInterceptor) {
+    @Autowired
+    public UserController(final UserUseCasePort useCase,
+                          final TokenPort tokenPort,
+                          @Qualifier("IdEqualsOrAdminInterceptor")
+                          final HttpInterceptor idEqualsOrAdminInterceptor) {
         this.useCase = useCase;
         this.tokenPort = tokenPort;
         this.idEqualsOrAdminInterceptor = idEqualsOrAdminInterceptor;
     }
 
-    @GetMapping
-    public ResponseEntity<PageResponse<User>> getAll(@RequestParam(value = "page", defaultValue = "1") final int page,
-                                                     @RequestParam(value = "size", defaultValue = "10") final int size) {
-        final PageResponse<User> response = useCase.findAll(page, size);
+    @GetMapping(produces = APPLICATION_JSON_VALUE)
+    public ResponseEntity<PageResponse<UserByIdResponseDto>> getAll(@RequestParam(value = "page") final int page,
+                                                                    @RequestParam(value = "size") final int size) {
+        final PageResponse<User> result = useCase.findAll(page, size);
 
-        if (response.data().isEmpty()) {
-            throw new NotFoundException(Errors.USERS_NOT_FOUND);
-        }
+        final PageResponse<UserByIdResponseDto> response = PageResponse.<UserByIdResponseDto>builder()
+                .page(result.page())
+                .size(result.size())
+                .nextPage(result.nextPage())
+                .data(result.data().stream()
+                        .map(UserResponseMapper.INSTANCE::toUserByIdResponse)
+                        .collect(Collectors.toSet()))
+                .build();
 
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping(value = "/{id}", produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<SuperSetResponseDto<UserByIdResponseDto>> getById(@PathVariable("id") UUID userId,
                                                                             @RequestHeader(value = "Authorization") String token) {
         idEqualsOrAdminInterceptor.validate(new Object[]{userId, token});
@@ -65,14 +74,14 @@ public class UserController {
         return ResponseEntity.ok(new SuperSetResponseDto<>(UserResponseMapper.INSTANCE.toUserByIdResponse(user)));
     }
 
-    @PostMapping
+    @PostMapping(produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<SuperSetResponseDto<UserByIdResponseDto>> registre(@RequestBody @Valid UserRequestDto dto) {
         final User user = useCase.save(UserRequestMapper.INSTANCE.toDomain(dto));
         final var response = new SuperSetResponseDto<>(UserResponseMapper.INSTANCE.toUserByIdResponse(user));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @GetMapping("/activate")
+    @GetMapping(value = "/activate", produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<String> activate(@RequestParam("token") String token) {
         try {
             final DecodedJWT d = (DecodedJWT) tokenPort.validate(token);
@@ -91,7 +100,7 @@ public class UserController {
         }
     }
 
-    @GetMapping("/resend")
+    @GetMapping(value = "/resend", produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<String> resendEmail(@RequestParam("email") String email) {
         try {
             useCase.resendEmail(email);
@@ -101,13 +110,12 @@ public class UserController {
         }
     }
 
-    @GetMapping(value = "/inactivate")
-    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping(value = "/inactivate", produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<SuperSetResponseDto<UserByIdResponseDto>> inactivate(@RequestParam("email") String email,
                                                                                @RequestHeader(value = "Authorization") String token) {
-//        final User fromEmail = useCase.findByEmail(email);
+        final User fromEmail = useCase.findByEmail(email);
 
-//        idEqualsOrAdminInterceptor.validate(new Object[]{fromEmail.getId(), token});
+        idEqualsOrAdminInterceptor.validate(new Object[]{fromEmail.getId(), token});
 
         final User user = useCase.inactivate(email);
 
@@ -116,7 +124,7 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    @PatchMapping(value = "/{id}")
+    @PatchMapping(value = "/{id}", produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<SuperSetResponseDto<UserByIdResponseDto>> update(@PathVariable("id") UUID id,
                                                                            @RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto,
                                                                            @RequestHeader(value = "Authorization") String token) {
