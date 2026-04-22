@@ -32,8 +32,8 @@ public class IamController {
     public ResponseEntity<AuthResponseDto> login(@RequestBody @Valid final AuthRequestDto dto) {
         final String token = authUseCasePort.login(dto.cpf(), dto.password());
         final DecodedJWT d = (DecodedJWT) tokenPort.validate(token);
-        final UserRole role = UserRole.fromString(d.getClaim("role").as(String.class));
+        final String scopes = d.getClaim("scope").as(String.class);
 
-        return ResponseEntity.ok(new AuthResponseDto(token, null, List.of(role)));
+        return ResponseEntity.ok(new AuthResponseDto(token, null, scopes));
     }
 }

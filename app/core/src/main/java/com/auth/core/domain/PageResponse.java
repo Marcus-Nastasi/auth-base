@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 
 import java.io.Serializable;
-import java.util.Set;
+import java.util.Collection;
 
 @Builder
 @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -16,6 +16,8 @@ public record PageResponse<T>(
         int size,
         @JsonProperty("next_page")
         int nextPage,
+        @JsonProperty("next_page_link")
+        String nextPageLink,
         @JsonProperty("data")
-        Set<T> data
+        Collection<T> data
 ) implements Serializable {}

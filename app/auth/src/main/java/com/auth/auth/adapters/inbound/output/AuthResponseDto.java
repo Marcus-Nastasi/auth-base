@@ -16,6 +16,6 @@ public record AuthResponseDto(
         @JsonProperty(value = "refresh_token")
         String refreshToken,
 
-        @JsonProperty(value = "role")
-        List<UserRole> role
+        @JsonProperty(value = "scopes")
+        String scopes
 ) implements Serializable {}
