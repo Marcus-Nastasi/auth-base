@@ -5,7 +5,10 @@ import com.auth.core.shared.AppError;
 import com.auth.user.adapters.inbound.exceptions.UnprocessableEntityException;
 import com.auth.user.adapters.inbound.output.SuperSetErrorResponseDto;
 import com.auth.user.adapters.inbound.rest.UserController;
+import jakarta.validation.ConstraintDeclarationException;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.bcel.Const;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -68,4 +71,9 @@ public class UserExceptionHandler {
 
         return ResponseEntity.badRequest().body(response);
     }
+
+//    @ExceptionHandler(ConstraintDeclarationException.class)
+//    public ResponseEntity<Object> handleConstraintDeclarationException(final ConstraintViolationException ex) {
+//
+//    }
 }

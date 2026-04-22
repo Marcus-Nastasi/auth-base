@@ -4,7 +4,9 @@ import com.auth.core.domain.PageResponse;
 import com.auth.core.domain.User;
 import com.auth.core.domain.enums.UserRole;
 import com.auth.core.domain.enums.UserStatus;
+import com.auth.core.exceptions.InternalException;
 import com.auth.core.exceptions.NotFoundException;
+import com.auth.core.shared.Logger;
 import com.auth.user.adapters.inbound.exceptions.UnprocessableEntityException;
 import com.auth.core.ports.inbound.auth.PasswordEncoderPort;
 import com.auth.core.ports.inbound.user.UserUseCasePort;
@@ -13,7 +15,7 @@ import com.auth.core.ports.outbound.user.FindUserPort;
 import com.auth.core.ports.outbound.user.SaveUserPort;
 import com.auth.core.shared.Constants;
 import com.auth.core.shared.Errors;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +25,6 @@ import java.util.*;
 
 import static java.lang.String.format;
 
-@Slf4j
 @Component
 public class UserUseCase implements UserUseCasePort {
 
@@ -49,18 +50,23 @@ public class UserUseCase implements UserUseCasePort {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "get_users")
     public PageResponse<User> findAll(int page, int size) {
-        log.info("Searching all users");
+        Logger.info(LOG_CODE, "Searching users");
 
-        page = page > 0 ? page : 1;
+        page = page >= 0 ? page : 1;
         size = size > 0 ? size : 10;
 
         if (size > 50) size = 50;
 
         final Set<User> users = findUserPort.findAll(page, size);
 
-        if (users == null || users.isEmpty())
+        if (users == null || users.isEmpty()) {
+            Logger.info(LOG_CODE, "Not found users on db, returning an empty PageResponse object");
             return new PageResponse<>(page, size, 0, HashSet.newHashSet(0));
+        }
+
+        Logger.info(LOG_CODE, String.format("Users found on page: %s and size: %s", page, size), users);
 
         return new PageResponse<>(page, size, (page + 1), users);
     }
@@ -68,11 +74,11 @@ public class UserUseCase implements UserUseCasePort {
     @Override
     @Transactional(readOnly = true)
     public User findById(final UUID userId) throws NotFoundException {
-        log.info(format("Searching user by id: %s", userId));
+        Logger.info(LOG_CODE, format("Searching user by id: %s", userId));
 
         final User user = findUserPort.findById(userId).orElseThrow(NotFoundException::new);
 
-        log.info(format("User found by id: %s", user));
+        Logger.info(LOG_CODE, format("User found for id: %s", user.getId()), user);
 
         return user;
     }
@@ -80,7 +86,7 @@ public class UserUseCase implements UserUseCasePort {
     @Override
     @Transactional(readOnly = true)
     public User findByEmail(final String email) throws NotFoundException {
-        log.info(format("Searching user by email: %s", email));
+        Logger.info(LOG_CODE, format("Searching user by email: %s", email));
 
         return findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
     }
@@ -91,15 +97,15 @@ public class UserUseCase implements UserUseCasePort {
         rollbackFor = {RuntimeException.class, Exception.class}
     )
     public User save(final User user) {
-        log.info("User save payload received");
+        Logger.info(LOG_CODE, "User save payload received");
 
         User processed;
 
         if (user.getId() == null) {
-            log.info("Creating user");
+            Logger.info(LOG_CODE, "Creating user");
             processed = create(user);
         } else {
-            log.info("Updating user");
+            Logger.info(LOG_CODE, "Updating user");
             processed = update(user);
         }
 
@@ -109,10 +115,10 @@ public class UserUseCase implements UserUseCasePort {
     @Override
     @Transactional(rollbackFor = {RuntimeException.class, Exception.class})
     public User activate(final String email, final UUID userId) throws NotFoundException, UnprocessableEntityException {
-        log.info(format("Activating user: %s", email));
+        Logger.info(LOG_CODE, format("Activating user: %s", email));
 
         final User user = findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
-        log.info(format("User found: %s", user));
+        Logger.info(LOG_CODE, "User found: ", user);
 
 //        if (!user.getId().equals(userId)) {
 //            log.warn("User found id is different than passed user id");
@@ -120,13 +126,13 @@ public class UserUseCase implements UserUseCasePort {
 //        }
 
         if (user.getStatus().getCode() == UserStatus.ACTIVE.getCode()) {
-            log.warn("User is already active");
+            Logger.info(LOG_CODE, "User is already active");
             throw new UnprocessableEntityException(Errors.USER_ALREADY_ACTIVE);
         }
 
         user.setStatus(UserStatus.ACTIVE);
 
-        log.info("Updating user's status to: [ACTIVE]");
+        Logger.info(LOG_CODE, "Updating user's status to: [ACTIVE]");
 
         return saveUserPort.save(user);
     }
@@ -134,13 +140,13 @@ public class UserUseCase implements UserUseCasePort {
     @Override
     @Transactional(rollbackFor = {RuntimeException.class, Exception.class})
     public User inactivate(final String email) throws NotFoundException {
-        log.info(format("Inactivating user: %s", email));
+        Logger.info(LOG_CODE, format("Inactivating user: %s", email));
 
         final User user = findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
-        log.info(format("User found: %s", user));
+        Logger.info(LOG_CODE, format("User found: %s", user.getId()), user);
 
         user.setStatus(UserStatus.INACTIVE);
-        log.info("Setting the UserStatus to INACTIVE");
+        Logger.info(LOG_CODE, "Setting the UserStatus to [INACTIVE]");
 
         user.setInactivatedAt(LocalDateTime.now(Constants.CLOCK));
 
@@ -149,17 +155,17 @@ public class UserUseCase implements UserUseCasePort {
 
     @Override
     public void resendEmail(final String email) throws UnprocessableEntityException, NotFoundException {
-        log.info(format("Resending email: %s", email));
+        Logger.info(LOG_CODE, format("Resending email: %s", email));
 
         findUserPort.findByEmail(email).ifPresentOrElse(u -> {
-            log.info(format("User is present: %s", u));
+            Logger.info(LOG_CODE, format("User is present: %s", u.getEmail()), u);
 
             if (u.getStatus().getCode() == UserStatus.ACTIVE.getCode()) {
-                log.warn("User already active");
+                Logger.info(LOG_CODE, "User already active");
                 throw new UnprocessableEntityException(Errors.USER_ALREADY_ACTIVE);
             }
 
-            log.info("Sending confirmation e-mail");
+            Logger.info(LOG_CODE, "Sending confirmation e-mail");
             confirmationEmailSenderPort.send(u);
         }, NotFoundException::new);
     }
@@ -170,36 +176,45 @@ public class UserUseCase implements UserUseCasePort {
 
         if (user.getUserRole() == null) user.setUserRole(UserRole.USER);
 
-        log.info(format("Creating user: %s", user));
+        Logger.info(LOG_CODE, format("Creating user: %s", user.getEmail()), user);
 
         final LocalDateTime moment = LocalDateTime.now(Constants.CLOCK);
         final Optional<User> existingUser = findUserPort.findUserByCpf(user.getCpf());
 
         if (existingUser.isPresent()) {
-            log.info(format("%s: user already exists with cpf %s", LOG_CODE, user.getCpf()));
+            Logger.info(LOG_CODE, format("User already exists with cpf: %s", user.getCpf()));
             throw new UnprocessableEntityException(Errors.USER_ALREADY_EXISTS);
         }
 
         user.setPassword(passwordEncoderPort.encode(user.getPassword()));
 
-        log.info(format("Saving User: %s", user));
+        Logger.info(LOG_CODE, format("Saving User: %s", user.getEmail()), user);
         final User newUser = saveUserPort.save(User.newUser(user, moment));
 
-        log.info("Sending confirmation e-mail");
+        Logger.info(LOG_CODE, "Sending confirmation e-mail");
         confirmationEmailSenderPort.send(newUser);
 
         return newUser;
     }
 
     @Transactional(rollbackFor = {NotFoundException.class, Exception.class})
-    private User update(final User user) {
-        log.info(format("Updating User: %s", user));
+    private User update(final User user) throws InternalException {
+        Logger.info(LOG_CODE, format("Updating user: %s", user.getEmail()), user);
 
         final User existingUser = findUserPort.findById(user.getId()).orElseThrow(NotFoundException::new);
-        log.info(format("User found: %s", existingUser));
+        Logger.info(LOG_CODE, format("User found: %s", existingUser.getId()), existingUser);
 
         final LocalDateTime moment = LocalDateTime.now(Constants.CLOCK);
 
-        return saveUserPort.save(existingUser.update(user, moment));
+        Logger.info(LOG_CODE, "Updating user...");
+        final Optional<User> updated = Optional.ofNullable(saveUserPort.save(existingUser.update(user, moment)));
+
+        if (updated.isPresent()) {
+            Logger.info(LOG_CODE, "Successfully updated user: ", updated.get());
+            return updated.get();
+        } else {
+            Logger.error(LOG_CODE, "Failed updating user");
+            throw new InternalException(Errors.COULD_NOT_UPDATE_USER);
+        }
     }
 }

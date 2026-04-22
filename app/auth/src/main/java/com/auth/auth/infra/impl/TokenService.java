@@ -105,7 +105,7 @@ public class TokenService implements TokenPort {
                 .toInstant(ZoneOffset.of("-03:00"));
     }
 
-    public RSAPublicKey getPublicKey() {
+    public Object getPublicKey() {
         return publicKey;
     }
 

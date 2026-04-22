@@ -4,8 +4,8 @@ import com.auth.core.shared.Errors;
 
 public enum UserRole {
 
-    ADMIN("admin"),
-    USER("user");
+    ADMIN("ADMIN"),
+    USER("USER");
 
     private final String role;
 
