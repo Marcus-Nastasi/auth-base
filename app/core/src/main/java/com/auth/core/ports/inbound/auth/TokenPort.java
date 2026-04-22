@@ -7,6 +7,7 @@ public interface TokenPort {
     Object getPublicKey();
 
     String getKid();
+
     String generate(User user);
 
     Object validate(String s);

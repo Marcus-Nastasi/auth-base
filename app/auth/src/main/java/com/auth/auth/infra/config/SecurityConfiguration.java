@@ -10,7 +10,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -32,15 +31,11 @@ public class SecurityConfiguration {
     @Primary
     public SecurityFilterChain securityFilterChain(final HttpSecurity httpSecurity) {
         return httpSecurity.csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(http -> http
-                        .requestMatchers(HttpMethod.POST, "/api/v1/user").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/user**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/test").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/user/activate", "/api/v1/user/resend").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/user/resend").permitAll()
-                        .requestMatchers("/api/v1/iam", "/.well-known/**", "/test").permitAll()
-                        .anyRequest().authenticated()
+                    .requestMatchers("/api/v1/iam/**", "/.well-known/**", "/test").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/v1/user").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/v1/user/activate", "/api/v1/user/resend").permitAll()
+                    .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
                 .build();
@@ -50,9 +45,4 @@ public class SecurityConfiguration {
     public JwtDecoder jwtDecoder() {
         return NimbusJwtDecoder.withPublicKey(RSAPublicKey.class.cast(tokenService.getPublicKey())).build();
     }
-
-//    @Bean
-//    public AuthenticationManager authenticationManager(AuthenticationConfiguration ac) {
-//        return ac.getAuthenticationManager();
-//    }
 }

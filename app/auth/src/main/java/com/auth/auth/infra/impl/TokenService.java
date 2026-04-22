@@ -2,6 +2,7 @@ package com.auth.auth.infra.impl;
 
 import com.auth.auth.infra.util.PemUtils;
 import com.auth.core.domain.User;
+import com.auth.core.domain.enums.UserRole;
 import com.auth.core.exceptions.ForbiddenException;
 import com.auth.core.ports.inbound.auth.TokenPort;
 import com.auth0.jwt.JWT;
@@ -17,6 +18,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 
 @Service
 public class TokenService implements TokenPort {
@@ -52,7 +54,7 @@ public class TokenService implements TokenPort {
                 .withSubject(user.getId().toString())
                 .withClaim("email", user.getEmail())
                 .withClaim("cpf", user.getCpf())
-                .withClaim("role", user.getUserRole().getRole())
+                .withClaim("scope", buildScope(user))
                 .withExpiresAt(exp())
                 .sign(algorithm);
         } catch (IllegalArgumentException | JWTCreationException e) {
@@ -80,10 +82,19 @@ public class TokenService implements TokenPort {
                 .withIssuer(issuer)
                 .withSubject(user.getId().toString())
                 .withClaim("email", user.getEmail())
+                .withClaim("scope", buildScope(user))
                 .withExpiresAt(emailExpiration())
                 .sign(algorithm);
         } catch (IllegalArgumentException | JWTCreationException e) {
             return null;
+        }
+    }
+
+    private String buildScope(final User user) {
+        if (UserRole.ADMIN.equals(user.getUserRole())) {
+            return "users.read users.write users.admin";
+        } else {
+            return "users.read users.write users.user";
         }
     }
 

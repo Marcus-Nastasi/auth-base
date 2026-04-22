@@ -13,11 +13,13 @@ import com.auth.user.adapters.inbound.mappers.UserResponseMapper;
 import com.auth.user.adapters.inbound.output.SuperSetResponseDto;
 import com.auth.user.adapters.inbound.output.UserByIdResponseDto;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,6 +27,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.TEXT_HTML_VALUE;
 
 @Validated
 @RestController
@@ -48,14 +51,17 @@ public class UserController {
     }
 
     @GetMapping(produces = APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAllAuthorities('SCOPE_users.read','SCOPE_users.admin')")
     public ResponseEntity<PageResponse<UserByIdResponseDto>> getAll(@RequestParam(value = "page") final int page,
-                                                                    @RequestParam(value = "size") final int size) {
+                                                                    @RequestParam(value = "size") final int size,
+                                                                    HttpServletRequest httpServletRequest) {
         final PageResponse<User> result = useCase.findAll(page, size);
 
         final PageResponse<UserByIdResponseDto> response = PageResponse.<UserByIdResponseDto>builder()
                 .page(result.page())
                 .size(result.size())
                 .nextPage(result.nextPage())
+                .nextPageLink(httpServletRequest.getRequestURL().toString() +"?"+ httpServletRequest.getQueryString())
                 .data(result.data().stream()
                         .map(UserResponseMapper.INSTANCE::toUserByIdResponse)
                         .collect(Collectors.toSet()))
@@ -81,7 +87,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @GetMapping(value = "/activate", produces = APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/activate", produces = TEXT_HTML_VALUE)
     public ResponseEntity<String> activate(@RequestParam("token") String token) {
         try {
             final DecodedJWT d = (DecodedJWT) tokenPort.validate(token);

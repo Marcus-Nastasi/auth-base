@@ -4,10 +4,12 @@ import com.auth.core.domain.enums.UserRole;
 import com.auth.core.exceptions.ForbiddenException;
 import com.auth.core.ports.inbound.auth.HttpInterceptor;
 import com.auth.core.ports.inbound.auth.TokenPort;
+import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.UUID;
 
 @Component("IdEqualsOrAdminInterceptor")
@@ -30,7 +32,7 @@ public class IdEqualsOrAdminInterceptor implements HttpInterceptor {
 
             final DecodedJWT d = (DecodedJWT) tokenPort.validate(getToken(token));
             final UUID idFromToken = UUID.fromString(d.getSubject());
-            final UserRole userRoleFromToken = UserRole.fromString(d.getClaim("role").asString());
+            final UserRole userRoleFromToken = extractUserRoleFromScope(d);
 
             if (!isIdEqualsOrAdmin(id, idFromToken, userRoleFromToken)) {
                 throw new ForbiddenException("");
@@ -60,5 +62,17 @@ public class IdEqualsOrAdminInterceptor implements HttpInterceptor {
             return true;
 
         return userId.equals(idFromToken);
+    }
+
+    private UserRole extractUserRoleFromScope(DecodedJWT d) {
+        final String scope = Optional.ofNullable(d.getClaim("scope"))
+                .map(Claim::asString)
+                .orElseThrow(() -> new ForbiddenException(""));
+
+        if (scope.contains("users.admin")) {
+            return UserRole.ADMIN;
+        } else {
+            return UserRole.USER;
+        }
     }
 }

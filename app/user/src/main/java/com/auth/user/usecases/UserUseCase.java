@@ -63,12 +63,12 @@ public class UserUseCase implements UserUseCasePort {
 
         if (users == null || users.isEmpty()) {
             Logger.info(LOG_CODE, "Not found users on db, returning an empty PageResponse object");
-            return new PageResponse<>(page, size, 0, HashSet.newHashSet(0));
+            return new PageResponse<>(page, size, 0, null, Collections.emptySet());
         }
 
         Logger.info(LOG_CODE, String.format("Users found on page: %s and size: %s", page, size), users);
 
-        return new PageResponse<>(page, size, (page + 1), users);
+        return new PageResponse<>(page, size, (page + 1), null, users);
     }
 
     @Override
@@ -167,6 +167,8 @@ public class UserUseCase implements UserUseCasePort {
 
             Logger.info(LOG_CODE, "Sending confirmation e-mail");
             confirmationEmailSenderPort.send(u);
+
+            Logger.info(LOG_CODE, "E-mail sent successfully");
         }, NotFoundException::new);
     }
 
