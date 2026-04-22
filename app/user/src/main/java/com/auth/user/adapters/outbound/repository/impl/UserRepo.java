@@ -5,12 +5,12 @@ import com.auth.core.exceptions.InternalException;
 import com.auth.core.ports.outbound.user.FindUserPort;
 import com.auth.core.ports.outbound.user.SaveUserPort;
 import com.auth.core.shared.Errors;
+import com.auth.core.shared.Logger;
 import com.auth.user.adapters.outbound.entity.UserEntity;
 import com.auth.user.adapters.outbound.mappers.UserEntityMapper;
 import com.auth.user.adapters.outbound.repository.UserJpaRepo;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -21,7 +21,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 public class UserRepo implements FindUserPort, SaveUserPort {
 
@@ -32,7 +31,7 @@ public class UserRepo implements FindUserPort, SaveUserPort {
     @PersistenceContext
     private final EntityManager entityManager;
 
-    public UserRepo(UserJpaRepo userJpaRepo, EntityManager entityManager) {
+    public UserRepo(final UserJpaRepo userJpaRepo, final EntityManager entityManager) {
         this.userJpaRepo = userJpaRepo;
         this.entityManager = entityManager;
     }
@@ -78,7 +77,7 @@ public class UserRepo implements FindUserPort, SaveUserPort {
 
             return UserEntityMapper.INSTANCE.toDomain(savedUserEntity);
         } catch (Exception e) {
-            log.error(LOG_CODE + ": could not save user, internal error.");
+            Logger.error(LOG_CODE, "Could not save user, internal error", e.getMessage(), e);
             throw new InternalException(e);
         }
     }

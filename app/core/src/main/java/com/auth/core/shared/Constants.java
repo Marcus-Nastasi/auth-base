@@ -2,6 +2,7 @@ package com.auth.core.shared;
 
 import java.time.Clock;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 
 public final class Constants {
 
@@ -9,6 +10,7 @@ public final class Constants {
 
     public static final ZoneId ZONE_ID = ZoneId.of("America/Sao_Paulo");
     public static final Clock CLOCK = Clock.systemDefaultZone().withZone(ZONE_ID);
+    public static final ZoneOffset ZONE_OFFSET = ZoneOffset.of("+03:00");
 
     // Email constants
     public static final String EMAIL_HOST_KEY = "mail.smtp.host";
