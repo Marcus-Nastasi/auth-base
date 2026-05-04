@@ -19,16 +19,15 @@ services:
   auth-base-backend:
     build:
       context: ../app/
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile-local
     image: auth-base-backend:latest
     container_name: auth-base-backend
     ports:
       - "8080:8080"
+    env_file:
+      - ../.env
     environment:
-      ENV: dev
-      SPRING_REDIS_HOST: ads-report-redis
-      SPRING_REDIS_PORT: 6379
-      SPRING_CACHE_REDIS_TIME_TO_LIVE: 12h
+      SPRING_PROFILES_ACTIVE: docker-local
     networks:
       - auth-base-network
     depends_on:

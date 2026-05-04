@@ -1,6 +1,8 @@
 package com.auth.core.ports.inbound.auth;
 
+import com.auth.core.domain.AuthLogin;
+
 public interface AuthUseCasePort {
 
-    String login(String email, String password);
+    AuthLogin login(String email, String password);
 }

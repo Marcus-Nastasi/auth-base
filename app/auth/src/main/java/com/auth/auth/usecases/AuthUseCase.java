@@ -1,5 +1,6 @@
 package com.auth.auth.usecases;
 
+import com.auth.core.domain.AuthLogin;
 import com.auth.core.domain.User;
 import com.auth.core.exceptions.ForbiddenException;
 import com.auth.core.exceptions.NotFoundException;
@@ -32,7 +33,7 @@ public class AuthUseCase implements AuthUseCasePort {
     }
 
     @Override
-    public String login(final String email, final String password) {
+    public AuthLogin login(final String email, final String password) {
         Logger.info(LOG_CODE, format("Payload received: %s", email));
 
         final User user = findUserPort.findUserByCpf(email).orElseThrow(NotFoundException::new);
@@ -42,7 +43,15 @@ public class AuthUseCase implements AuthUseCasePort {
         isPasswordEqual(password, user);
         Logger.info(LOG_CODE, "Generating token");
 
-        return tokenPort.generate(user);
+        final String accessToken = tokenPort.generateAccessToken(user);
+        final String refreshToken = tokenPort.generateRefreshToken(user);
+        final String scopes = (String) tokenPort.getClaim(accessToken, "scope", String.class);
+
+        return AuthLogin.builder()
+                .token(accessToken)
+                .refresh(refreshToken)
+                .scope(scopes)
+                .build();
     }
 
     private void isPasswordEqual(final String password, final User user) {

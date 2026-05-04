@@ -1,0 +1,41 @@
+variable "aws_region"  {
+  type = string
+  default = "sa-east-1"
+}
+
+variable "project_name" {
+  type = string
+  default = "auth-base"
+}
+
+variable "environment"  {
+  type = string
+}
+
+variable "app_port" {
+  type = number
+  default = 8080
+}
+
+variable "db_username"  {
+  type = string
+  description = "Usuário do banco"
+  default = ""
+}
+
+variable "db_password"  {
+  type = string
+  description = "Senha do banco"
+  default = ""
+  sensitive = true
+}
+
+variable "rsa_private_pem" {
+  description = "Conteúdo do private.pem"
+  sensitive   = true
+}
+
+variable "rsa_public_pem" {
+  description = "Conteúdo do public.pem"
+  sensitive   = true
+}

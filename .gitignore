@@ -42,3 +42,7 @@ private.pem
 */private.pem
 public.pem
 */public.pem
+
+## Terraform
+.terraform.lock.hcl
+.terraform
