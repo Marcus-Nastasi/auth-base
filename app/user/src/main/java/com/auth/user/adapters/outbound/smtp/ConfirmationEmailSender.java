@@ -5,22 +5,22 @@ import com.auth.core.exceptions.ForbiddenException;
 import com.auth.core.ports.inbound.auth.TokenPort;
 import com.auth.core.ports.outbound.auth.ConfirmationEmailSenderPort;
 import com.auth.core.shared.Constants;
-import io.github.cdimascio.dotenv.Dotenv;
-import io.github.cdimascio.dotenv.DotenvException;
+import com.auth.core.shared.Logger;
 import jakarta.mail.*;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Properties;
 
-@Slf4j
 @Service
 @ConditionalOnProperty(value = "spring.mail.enable", havingValue = "true")
 public class ConfirmationEmailSender implements ConfirmationEmailSenderPort {
+
+    private static final String LOG_CODE = "CONFIRMATION-EMAIL-SENDER";
 
     private final String host;
 
@@ -34,22 +34,24 @@ public class ConfirmationEmailSender implements ConfirmationEmailSenderPort {
 
     private final TokenPort tokenPort;
 
-    public ConfirmationEmailSender(final TokenPort tokenPort) throws DotenvException {
-        final Dotenv dotenv = Dotenv.load();
-
-        this.host = dotenv.get("MAIL_HOST");
-        this.port = dotenv.get("MAIL_PORT");
-        this.username = dotenv.get("MAIL_USERNAME");
-        this.password = dotenv.get("MAIL_PASSWORD");
-        this.team = dotenv.get("MAIL_TEAM");
-
+    public ConfirmationEmailSender(final TokenPort tokenPort,
+                                   @Value("${spring.mail.host}") final String host,
+                                   @Value("${spring.mail.port}") final String port,
+                                   @Value("${spring.mail.username}") final String username,
+                                   @Value("${spring.mail.password}") final String password,
+                                   @Value("${spring.mail.team}") final String team) {
+        this.host     = host;
+        this.port     = port;
+        this.username = username;
+        this.password = password;
+        this.team     = team;
         this.tokenPort = tokenPort;
     }
 
     @Override
     public void send(final User data) {
         try {
-            final String token = tokenPort.emailConfirmation(data);
+            final String token = tokenPort.generateEmailConfirmationToken(data);
             if (token == null) throw new ForbiddenException("");
 
             final Properties props = setProperties();
@@ -59,7 +61,7 @@ public class ConfirmationEmailSender implements ConfirmationEmailSenderPort {
 
             Transport.send(message);
         } catch (UnsupportedEncodingException | MessagingException e) {
-            log.error(e.getMessage(), e);
+            Logger.error(LOG_CODE, e.getMessage(), e);
         }
     }
 
@@ -75,7 +77,7 @@ public class ConfirmationEmailSender implements ConfirmationEmailSenderPort {
     private Session createSession(final Properties props) {
         return Session.getInstance(props, new Authenticator() {
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(username, password);
+            return new PasswordAuthentication(username, password);
             }
         });
     }
