@@ -4,12 +4,17 @@ import com.auth.core.domain.User;
 
 public interface TokenPort {
 
+    Object getClaim(String token, String claim, Class clazz);
+
     Object getPublicKey();
 
     String getKid();
-    String generate(User user);
+
+    String generateAccessToken(User user);
+
+    String generateRefreshToken(User user);
+
+    String generateEmailConfirmationToken(User user);
 
     Object validate(String s);
-
-    String emailConfirmation(User user);
 }

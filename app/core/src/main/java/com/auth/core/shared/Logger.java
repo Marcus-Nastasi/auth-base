@@ -28,20 +28,17 @@ public final class Logger {
     }
 
     @Getter
+    @RequiredArgsConstructor
     private enum Severity implements Serializable {
 
         INFO("INFO"), WARN("WARN"), DEBUG("DEBUG"), ERROR("ERROR");
 
         private final String name;
-
-        Severity(final String name) {
-            this.name = name;
-        }
     }
 
     @Builder
+    @JsonInclude
     @RequiredArgsConstructor
-    @JsonInclude(JsonInclude.Include.ALWAYS)
     private static class LoggerJson implements Serializable {
 
         @Serial
@@ -85,7 +82,7 @@ public final class Logger {
         String jsonLog = null;
         try {
             jsonLog = objectMapper.writeValueAsString(loggerJson);
-        } catch (JsonProcessingException e) {
+        } catch (final JsonProcessingException e) {
             throw new RuntimeException(e.getMessage(), e);
         }
 

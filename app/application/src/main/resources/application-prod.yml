@@ -1,10 +1,10 @@
 spring:
 
-  # local PostgreSQL
+  # PostgreSQL
   datasource:
-    url: jdbc:postgresql://auth-base-postgres:5432/postgres
-    username: postgres
-    password: 123
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   # Security
@@ -12,9 +12,9 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://iam.local
-      kid: auth-base-kid
-      issuer: https://iam.local
+          issuer-uri: ${OAUTH2_ISSUER_URI}
+      kid: ${OAUTH2_KID}
+      issuer: ${OAUTH2_ISSUER_URI}
     key:
       public:
         path: /app/public.pem
@@ -23,8 +23,6 @@ spring:
 
   # JPA
   jpa:
-    #hibernate:
-    #  ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
