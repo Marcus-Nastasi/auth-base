@@ -24,6 +24,7 @@ jobs:
           cache: 'maven'
 
       - name: Build da aplicação
+        working-directory: app
         run: mvn package
 
       - name: Autenticar na AWS
