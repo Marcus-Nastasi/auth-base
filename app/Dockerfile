@@ -10,15 +10,18 @@ RUN mvn dependency:go-offline
 RUN mvn clean package -DskipTests
 
 # Final phase
-FROM openjdk:21-ea-25-jdk-oraclelinux8
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
-# Instala a AWS CLI para buscar os parâmetros do SSM no entrypoint
-RUN yum install -y unzip curl && \
+# Instala AWS CLI via apt
+RUN apt-get update && \
+    apt-get install -y unzip curl && \
     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \
     ./aws/install && \
-    rm -rf awscliv2.zip aws
+    rm -rf awscliv2.zip aws && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/application/target/application-0.0.1-SNAPSHOT.jar \
      /app/application/application-0.0.1-SNAPSHOT.jar
