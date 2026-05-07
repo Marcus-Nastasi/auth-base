@@ -8,7 +8,7 @@ import java.io.Serializable;
 import java.util.Collection;
 
 @Builder
-@JsonInclude(JsonInclude.Include.ALWAYS)
+@JsonInclude
 public record PageResponse<T>(
         @JsonProperty("page")
         int page,

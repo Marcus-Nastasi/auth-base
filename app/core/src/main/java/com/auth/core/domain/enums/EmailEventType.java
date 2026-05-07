@@ -1,5 +1,8 @@
 package com.auth.core.domain.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum EmailEventType {
 
     USER_PENDING_CREATED("UserPendingCreated");
@@ -10,16 +13,9 @@ public enum EmailEventType {
         this.value = value;
     }
 
-    public static EmailEventType fromString(String value) {
-        for (EmailEventType eventType: EmailEventType.values()) {
-            if (eventType.getValue().equalsIgnoreCase(value)) {
-                return eventType;
-            }
-        }
-        throw new RuntimeException("");
-    }
-
-    public String getValue() {
-        return value;
+    public static EmailEventType fromString(final String value) {
+        for (final var eventType: EmailEventType.values())
+            if (eventType.getValue().equalsIgnoreCase(value)) return eventType;
+        return null;
     }
 }

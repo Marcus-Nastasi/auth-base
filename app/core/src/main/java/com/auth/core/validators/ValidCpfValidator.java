@@ -15,7 +15,7 @@ public class ValidCpfValidator implements ConstraintValidator<ValidCpf, String> 
     private String fieldName;
 
     @Override
-    public void initialize(ValidCpf constraintAnnotation) {
+    public void initialize(final ValidCpf constraintAnnotation) {
         ConstraintValidator.super.initialize(constraintAnnotation);
 
         this.message = constraintAnnotation.message();
