@@ -6,23 +6,3 @@ resource "aws_ecr_repository" "app" {
     scan_on_push = true   # escaneia vulnerabilidades automaticamente
   }
 }
-
-# Mantém apenas as 3 imagens mais recentes (economiza custo)
-resource "aws_ecr_lifecycle_policy" "app" {
-  repository = aws_ecr_repository.app.name
-
-  policy = jsonencode({
-    rules = [{
-      rulePriority = 1
-      description  = "Manter ultimas 3 imagens"
-      selection = {
-        tagStatus   = "any"
-        countType   = "imageCountMoreThan"
-        countNumber = 3
-      }
-      action = {
-        type = "expire"
-      }
-    }]
-  })
-}
