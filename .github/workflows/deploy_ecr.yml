@@ -10,22 +10,22 @@ env:
 
 jobs:
   test:
-    uses: ./.github/workflows/modules/test.yml
+    uses: ./.github/workflows/test.yml
     secrets: inherit
 
   terraform-validate:
     needs: test
-    uses: ./.github/workflows/modules/tf_validate.yml
+    uses: ./.github/workflows/tf_validate.yml
     secrets: inherit
 
   terraform-plan:
     needs: terraform-validate
-    uses: ./.github/workflows/modules/tf_plan.yml
+    uses: ./.github/workflows/tf_plan.yml
     secrets: inherit
 
   terraform-apply:
     needs: terraform-plan
-    uses: ./.github/workflows/modules/tf_apply.yml
+    uses: ./.github/workflows/tf_apply.yml
     secrets: inherit
 
   build-and-push:
