@@ -1,0 +1,32 @@
+name: Terraform Plan
+
+on:
+  workflow_call:
+
+jobs:
+  terraform-plan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code checkout
+      - uses: actions/checkout@v4
+
+      - name: AWS config credentials
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ secrets.AWS_REGION }}
+
+      - name: Setup terraform
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: infra/terraform
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: infra/terraform
+        env:
+          TF_VAR_rsa_private_pem:    ${{ secrets.TF_VAR_RSA_PRIVATE_PEM }}
+          TF_VAR_rsa_public_pem:     ${{ secrets.TF_VAR_RSA_PUBLIC_PEM }}
+        run: terraform plan
