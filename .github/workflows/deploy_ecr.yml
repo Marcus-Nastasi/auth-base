@@ -9,6 +9,89 @@ env:
   ECR_REPOSITORY: auth-base
 
 jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Code checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run tests
+        working-directory: app
+        run: mvn test
+
+  terraform-validate:
+    name: Terraform validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Terraform Init
+        working-directory: infra
+        env:
+          TF_VAR_rsa_private_pem: ${{ secrets.RSA_PRIVATE_PEM }}
+          TF_VAR_rsa_public_pem: ${{ secrets.RSA_PUBLIC_PEM }}
+        run: terraform init -auto-approve
+
+      - name: Terraform Validate
+        working-directory: infra
+        env:
+          TF_VAR_rsa_private_pem: ${{ secrets.RSA_PRIVATE_PEM }}
+          TF_VAR_rsa_public_pem: ${{ secrets.RSA_PUBLIC_PEM }}
+        run: terraform validate -auto-approve
+
+  terraform-apply:
+    name: Terraform apply
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Terraform Init
+        working-directory: infra
+        env:
+          TF_VAR_rsa_private_pem: ${{ secrets.RSA_PRIVATE_PEM }}
+          TF_VAR_rsa_public_pem: ${{ secrets.RSA_PUBLIC_PEM }}
+        run: terraform init -auto-approve
+
+      - name: Terraform Validate
+        working-directory: infra
+        env:
+          TF_VAR_rsa_private_pem: ${{ secrets.RSA_PRIVATE_PEM }}
+          TF_VAR_rsa_public_pem: ${{ secrets.RSA_PUBLIC_PEM }}
+        run: terraform validate -auto-approve
+
+      - name: Terraform Plan
+        working-directory: infra
+        env:
+          TF_VAR_rsa_private_pem: ${{ secrets.RSA_PRIVATE_PEM }}
+          TF_VAR_rsa_public_pem: ${{ secrets.RSA_PUBLIC_PEM }}
+        run: terraform plan -auto-approve
+
+      - name: Terraform Apply
+        working-directory: infra
+        env:
+          TF_VAR_rsa_private_pem: ${{ secrets.RSA_PRIVATE_PEM }}
+          TF_VAR_rsa_public_pem: ${{ secrets.RSA_PUBLIC_PEM }}
+        run: terraform apply -auto-approve
+
   build-and-push:
     runs-on: ubuntu-latest
 
@@ -25,7 +108,7 @@ jobs:
 
       - name: Build da aplicação
         working-directory: app
-        run: mvn package
+        run: mvn package -DskipTests
 
       - name: Autenticar na AWS
         uses: aws-actions/configure-aws-credentials@v4
