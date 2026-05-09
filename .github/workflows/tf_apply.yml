@@ -31,6 +31,6 @@ jobs:
       - name: Terraform Apply
         working-directory: infra
         env:
-          TF_VAR_rsa_private_pem:    ${{ secrets.TF_VAR_RSA_PRIVATE_PEM }}
-          TF_VAR_rsa_public_pem:     ${{ secrets.TF_VAR_RSA_PUBLIC_PEM }}
+          TF_VAR_rsa_private_pem:    ${{ secrets.RSA_PRIVATE_PEM }}
+          TF_VAR_rsa_public_pem:     ${{ secrets.RSA_PUBLIC_PEM }}
         run: terraform apply -auto-approve -var-file=inventories/${{ inputs.environment }}/terraform.tfvars
