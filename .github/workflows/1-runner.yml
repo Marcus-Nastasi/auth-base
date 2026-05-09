@@ -55,3 +55,5 @@ jobs:
     needs: [ set-env, terraform-apply ]
     uses: ./.github/workflows/deploy_ecr.yml
     secrets: inherit
+    with:
+      AWS_REGION: ${{ env.AWS_REGION }}
