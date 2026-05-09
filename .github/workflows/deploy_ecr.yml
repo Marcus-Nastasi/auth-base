@@ -3,27 +3,11 @@ name: Deploy ECR
 on:
   workflow_call:
     inputs:
-      AWS_REGION:
+      aws_region:
         required: true
         type: string
 
 jobs:
-  set-env:
-    runs-on: ubuntu-latest
-    outputs:
-      environment: ${{ steps.set-env.outputs.region }}
-    steps:
-      - name: Define env
-        id: set-env
-        run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "environment=prod" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref_name }}" = "develop" ]; then
-            echo "environment=dev" >> $GITHUB_OUTPUT
-          else
-            echo "environment=" >> $GITHUB_OUTPUT
-          fi
-
   build-and-push:
     runs-on: ubuntu-latest
 
@@ -47,7 +31,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ inputs.AWS_REGION }}
+          aws-region: ${{ inputs.aws_region }}
 
       - name: Login no ECR
         id: login-ecr
