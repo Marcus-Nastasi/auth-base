@@ -24,6 +24,7 @@ jobs:
           else
             echo "environment=" >> $GITHUB_OUTPUT
           fi
+          echo "aws_region=sa-east-1" >> $GITHUB_OUTPUT
 
   test:
     needs: set-env
@@ -56,4 +57,4 @@ jobs:
     uses: ./.github/workflows/deploy_ecr.yml
     secrets: inherit
     with:
-      AWS_REGION: ${{ env.AWS_REGION }}
+      aws_region: ${{ needs.set-env.outputs.aws_region }}
