@@ -2,6 +2,8 @@ package com.auth.user.adapters.inbound.rest;
 
 import com.auth.core.domain.PageResponse;
 import com.auth.core.domain.User;
+import com.auth.core.domain.enums.UserRole;
+import com.auth.core.domain.enums.UserStatus;
 import com.auth.core.exceptions.ForbiddenException;
 import com.auth.core.ports.inbound.auth.HttpInterceptor;
 import com.auth.core.ports.inbound.auth.TokenPort;
@@ -23,6 +25,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -54,8 +57,32 @@ public class UserController {
     @PreAuthorize("hasAllAuthorities('SCOPE_users.read','SCOPE_users.admin')")
     public ResponseEntity<PageResponse<UserByIdResponseDto>> getAll(@RequestParam(value = "page") final int page,
                                                                     @RequestParam(value = "size") final int size,
-                                                                    HttpServletRequest httpServletRequest) {
-        final PageResponse<User> result = useCase.findAll(page, size);
+                                                                    @RequestParam(value = "email", required = false)
+                                                                        final String email,
+                                                                    @RequestParam(value = "cpf", required = false)
+                                                                        final String cpf,
+                                                                    @RequestParam(value = "first_name", required = false)
+                                                                        final String firstName,
+                                                                    @RequestParam(value = "last_name", required = false)
+                                                                        final String lastName,
+                                                                    @RequestParam(value = "birth_date", required = false)
+                                                                        final LocalDate birthDate,
+                                                                    @RequestParam(value = "status", required = false)
+                                                                        final UserStatus status,
+                                                                    @RequestParam(value = "role", required = false)
+                                                                        final UserRole role,
+                                                                    final HttpServletRequest httpServletRequest) {
+        final PageResponse<User> result = useCase.findAll(
+                page,
+                size,
+                email,
+                cpf,
+                firstName,
+                lastName,
+                birthDate,
+                status,
+                role
+        );
 
         final PageResponse<UserByIdResponseDto> response = PageResponse.<UserByIdResponseDto>builder()
                 .page(result.page())

@@ -2,12 +2,23 @@ package com.auth.core.ports.inbound.user;
 
 import com.auth.core.domain.PageResponse;
 import com.auth.core.domain.User;
+import com.auth.core.domain.enums.UserRole;
+import com.auth.core.domain.enums.UserStatus;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 public interface UserUseCasePort {
 
-    PageResponse<User> findAll(int page, int size);
+    PageResponse<User> findAll(int page,
+                               int size,
+                               String email,
+                               String cpf,
+                               String firstName,
+                               String lastName,
+                               LocalDate birthDate,
+                               UserStatus status,
+                               UserRole userRole);
 
     User findById(UUID userId);
 

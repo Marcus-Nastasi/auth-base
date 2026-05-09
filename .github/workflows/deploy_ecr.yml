@@ -1,58 +1,10 @@
-name: Build e Push no ECR
+name: Deploy ECR
 
 on:
-  push:
-    branches: [main]
-
-env:
-  AWS_REGION: sa-east-1
-  ECR_REPOSITORY: auth-base
+  workflow_call:
 
 jobs:
-  set-env:
-    runs-on: ubuntu-latest
-    outputs:
-      environment: ${{ steps.set-env.outputs.environment }}
-    steps:
-      - name: Define env
-        id: set-env
-        run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "environment=prod" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref_name }}" = "develop" ]; then
-            echo "environment=dev" >> $GITHUB_OUTPUT
-          else
-            echo "environment=" >> $GITHUB_OUTPUT
-          fi
-
-  test:
-    needs: set-env
-    uses: ./.github/workflows/test.yml
-    secrets: inherit
-
-  terraform-validate:
-    needs: [ set-env, test ]
-    uses: ./.github/workflows/tf_validate.yml
-    secrets: inherit
-    with:
-      environment: ${{ needs.set-env.outputs.environment }}
-
-  terraform-plan:
-    needs: [set-env, terraform-validate]
-    uses: ./.github/workflows/tf_plan.yml
-    secrets: inherit
-    with:
-      environment: ${{ needs.set-env.outputs.environment }}
-
-  terraform-apply:
-    needs: [ set-env, terraform-validate, terraform-plan ]
-    uses: ./.github/workflows/tf_apply.yml
-    secrets: inherit
-    with:
-      environment: ${{ needs.set-env.outputs.environment }}
-
   build-and-push:
-    needs: terraform-apply
     runs-on: ubuntu-latest
 
     steps:
@@ -73,9 +25,9 @@ jobs:
       - name: Autenticar na AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region:            ${{ env.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Login no ECR
         id: login-ecr
