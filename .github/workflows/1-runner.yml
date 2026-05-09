@@ -6,6 +6,7 @@ on:
 
 jobs:
   set-env:
+    name: Set environment
     runs-on: ubuntu-latest
     outputs:
       environment: ${{ steps.set-env.outputs.environment }}
@@ -23,11 +24,13 @@ jobs:
           echo "aws_region=sa-east-1" >> $GITHUB_OUTPUT
 
   test:
+    name: Java test
     needs: set-env
     uses: ./.github/workflows/test.yml
     secrets: inherit
 
   terraform-validate:
+    name: Terraform validate
     needs: [ set-env, test ]
     uses: ./.github/workflows/tf_validate.yml
     secrets: inherit
@@ -35,6 +38,7 @@ jobs:
       environment: ${{ needs.set-env.outputs.environment }}
 
   terraform-plan:
+    name: Terraform plan
     needs: [set-env, terraform-validate]
     uses: ./.github/workflows/tf_plan.yml
     secrets: inherit
@@ -42,6 +46,7 @@ jobs:
       environment: ${{ needs.set-env.outputs.environment }}
 
   terraform-apply:
+    name: Terraform apply
     needs: [ set-env, terraform-validate, terraform-plan ]
     uses: ./.github/workflows/tf_apply.yml
     secrets: inherit
@@ -49,6 +54,7 @@ jobs:
       environment: ${{ needs.set-env.outputs.environment }}
 
   build-and-push:
+    name: Build and push ECR
     needs: [ set-env, terraform-apply ]
     uses: ./.github/workflows/deploy_ecr.yml
     secrets: inherit
