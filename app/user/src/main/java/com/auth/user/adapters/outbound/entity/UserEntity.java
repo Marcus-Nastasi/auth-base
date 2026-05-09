@@ -1,8 +1,10 @@
 package com.auth.user.adapters.outbound.entity;
 
+import com.auth.core.annotations.ValidCpf;
 import com.auth.core.domain.enums.UserRole;
 import com.auth.core.domain.enums.UserStatus;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -28,17 +30,19 @@ public class UserEntity implements Serializable {
     @NotNull
     @NotBlank
     @Size(max = 77)
+    @Email(message = "Email invalid")
     @Column(name = "email", length = 77, nullable = false)
     private String email;
 
     @NotNull
     @Size(min = 11, max = 14)
+    @ValidCpf(message = "Cpf cannot be null")
     @Column(name = "cpf", nullable = false)
     private String cpf;
 
     @NotNull
     @NotBlank
-    @Column(name = "password", nullable = false)
+    @Column(name = "password", length = 70, nullable = false)
     private String password;
 
     @NotNull

@@ -1,6 +1,8 @@
 package com.auth.user.usecases;
 
 import com.auth.core.domain.User;
+import com.auth.core.domain.enums.UserRole;
+import com.auth.core.domain.enums.UserStatus;
 import com.auth.core.exceptions.NotFoundException;
 import com.auth.core.ports.inbound.auth.PasswordEncoderPort;
 import com.auth.core.ports.outbound.auth.ConfirmationEmailSenderPort;
@@ -15,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -57,9 +60,10 @@ final class UserUseCaseTests {
 
     @Test
     void shouldGetAllUsers() {
-        when(findUserPort.findAll(anyInt(), anyInt())).thenReturn(Set.of(user));
+        when(findUserPort.findAll(anyInt(), anyInt(), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(Set.of(user));
 
-        final var result = useCase.findAll(1, 10);
+        final var result = useCase.findAll(1, 10, "email@email.com", "12345677890", "Jef", "Jones", LocalDate.of(2000, 4, 10), UserStatus.ACTIVE, UserRole.USER);
         final var resultUser = result.data().iterator().next();
 
         assertNotNull(result);
@@ -70,9 +74,10 @@ final class UserUseCaseTests {
 
     @Test
     void shouldReturnPageResponseEmpty() {
-        when(findUserPort.findAll(anyInt(), anyInt())).thenReturn(null);
+        when(findUserPort.findAll(anyInt(), anyInt(), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(null);
 
-        final var result = useCase.findAll(1, 10);
+        final var result = useCase.findAll(1, 10, "email@email.com", "12345677890", "Jef", "Jones", LocalDate.of(2000, 4, 10), UserStatus.ACTIVE, UserRole.USER);
 
         assertNotNull(result);
         assertTrue(result.data().isEmpty());

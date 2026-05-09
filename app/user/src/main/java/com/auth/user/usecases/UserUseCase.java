@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -51,7 +52,15 @@ public class UserUseCase implements UserUseCasePort {
     @Override
     @Transactional(readOnly = true)
     @Cacheable(value = "get_users")
-    public PageResponse<User> findAll(int page, int size) {
+    public PageResponse<User> findAll(int page,
+                                      int size,
+                                      final String email,
+                                      final String cpf,
+                                      final String firstName,
+                                      final String lastName,
+                                      final LocalDate birthDate,
+                                      final UserStatus status,
+                                      final UserRole userRole) {
         Logger.info(LOG_CODE, "Searching users");
 
         page = page >= 0 ? page : 1;
@@ -59,7 +68,17 @@ public class UserUseCase implements UserUseCasePort {
 
         if (size > 50) size = 50;
 
-        final Set<User> users = findUserPort.findAll(page, size);
+        final Set<User> users = findUserPort.findAll(
+                page,
+                size,
+                email,
+                cpf,
+                firstName,
+                lastName,
+                birthDate,
+                status,
+                userRole
+        );
 
         if (users == null || users.isEmpty()) {
             Logger.info(LOG_CODE, "Not found users on db, returning an empty PageResponse object");
