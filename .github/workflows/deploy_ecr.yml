@@ -33,6 +33,8 @@ jobs:
     needs: test
     uses: ./.github/workflows/tf_validate.yml
     secrets: inherit
+    with:
+      environment: ${{ needs.set-env.outputs.environment }}
 
   terraform-plan:
     needs: terraform-validate
