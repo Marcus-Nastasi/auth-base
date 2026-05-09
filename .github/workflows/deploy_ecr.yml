@@ -22,29 +22,30 @@ jobs:
           elif [ "${{ github.ref_name }}" = "develop" ]; then
             echo "environment=dev" >> $GITHUB_OUTPUT
           else
-            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "environment=" >> $GITHUB_OUTPUT
           fi
 
   test:
+    needs: set-env
     uses: ./.github/workflows/test.yml
     secrets: inherit
 
   terraform-validate:
-    needs: test
+    needs: [ set-env, test ]
     uses: ./.github/workflows/tf_validate.yml
     secrets: inherit
     with:
       environment: ${{ needs.set-env.outputs.environment }}
 
   terraform-plan:
-    needs: terraform-validate
+    needs: [set-env, terraform-validate]
     uses: ./.github/workflows/tf_plan.yml
     secrets: inherit
     with:
       environment: ${{ needs.set-env.outputs.environment }}
 
   terraform-apply:
-    needs: terraform-plan
+    needs: [ set-env, terraform-validate, terraform-plan ]
     uses: ./.github/workflows/tf_apply.yml
     secrets: inherit
     with:
