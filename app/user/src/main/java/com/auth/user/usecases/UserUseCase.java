@@ -209,14 +209,13 @@ public class UserUseCase implements UserUseCasePort {
         final LocalDateTime moment = LocalDateTime.now(Constants.CLOCK);
 
         Logger.info(LOG_CODE, "Updating user...");
-        final Optional<User> updated = Optional.ofNullable(saveUserPort.save(existingUser.update(user, moment)));
 
-        if (updated.isPresent()) {
-            Logger.info(LOG_CODE, "Successfully updated user: ", updated.get());
-            return updated.get();
-        } else {
+        return Optional.ofNullable(saveUserPort.save(existingUser.update(user, moment))).map(u -> {
+            Logger.info(LOG_CODE, "Successfully updated user: ", u);
+            return u;
+        }).orElseThrow(() -> {
             Logger.error(LOG_CODE, "Failed updating user");
-            throw new InternalException(Errors.COULD_NOT_UPDATE_USER);
-        }
+            return new InternalException(Errors.COULD_NOT_UPDATE_USER);
+        });
     }
 }

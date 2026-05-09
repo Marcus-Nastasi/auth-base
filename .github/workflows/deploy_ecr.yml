@@ -9,6 +9,22 @@ env:
   ECR_REPOSITORY: auth-base
 
 jobs:
+  set-env:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+    steps:
+      - name: Define env
+        id: set-env
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "environment=prod" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref_name }}" = "develop" ]; then
+            echo "environment=dev" >> $GITHUB_OUTPUT
+          else
+            echo "environment=staging" >> $GITHUB_OUTPUT
+          fi
+
   test:
     uses: ./.github/workflows/test.yml
     secrets: inherit
@@ -22,11 +38,15 @@ jobs:
     needs: terraform-validate
     uses: ./.github/workflows/tf_plan.yml
     secrets: inherit
+    with:
+      environment: ${{ needs.set-env.outputs.environment }}
 
   terraform-apply:
     needs: terraform-plan
     uses: ./.github/workflows/tf_apply.yml
     secrets: inherit
+    with:
+      environment: ${{ needs.set-env.outputs.environment }}
 
   build-and-push:
     needs: terraform-apply
