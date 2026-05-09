@@ -3,6 +3,9 @@ name: Deploy ECR
 on:
   workflow_call:
 
+env:
+  ECR_REPOSITORY: auth-base
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest

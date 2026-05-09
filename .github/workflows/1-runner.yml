@@ -4,10 +4,6 @@ on:
   push:
     branches: [main]
 
-env:
-  AWS_REGION: sa-east-1
-  ECR_REPOSITORY: auth-base
-
 jobs:
   set-env:
     runs-on: ubuntu-latest
