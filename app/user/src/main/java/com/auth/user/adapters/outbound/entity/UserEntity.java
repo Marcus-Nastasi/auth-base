@@ -8,9 +8,13 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.validator.constraints.br.CPF;
 
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -20,6 +24,8 @@ import java.util.*;
 @Data
 @Entity
 @Table(name = "users")
+@Builder(access = AccessLevel.PUBLIC)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class UserEntity implements Serializable {
 
     @Id
@@ -27,21 +33,21 @@ public class UserEntity implements Serializable {
     @Column(name = "id", columnDefinition = "UUID")
     private UUID id;
 
-    @NotNull
-    @NotBlank
-    @Size(max = 77)
-    @Email(message = "Email invalid")
+    @Email(message = "Invalid email field")
+    @NotNull(message = "Email field cannot be null")
+    @NotBlank(message = "Email field cannot be blank")
+    @Size(max = 77, message = "Email field cannot have more than 77 characters")
     @Column(name = "email", length = 77, nullable = false)
     private String email;
 
-    @NotNull
-    @Size(min = 11, max = 14)
     @ValidCpf(message = "Cpf cannot be null")
+    @NotNull(message = "Cpf field cannot be null")
+    @Size(min = 11, max = 14, message = "Cpf field may have minimal 11 chars, and 14 as maximum")
     @Column(name = "cpf", nullable = false)
     private String cpf;
 
-    @NotNull
-    @NotBlank
+    @NotNull(message = "Password field cannot be null")
+    @NotBlank(message = "Password field cannot be blank")
     @Column(name = "password", length = 70, nullable = false)
     private String password;
 

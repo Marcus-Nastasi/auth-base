@@ -14,6 +14,8 @@ jobs:
       - name: Define env
         id: set-env
         run: |
+          echo "aws_region=sa-east-1" >> $GITHUB_OUTPUT
+
           if [ "${{ github.ref_name }}" = "main" ]; then
             echo "environment=prod" >> $GITHUB_OUTPUT
           elif [ "${{ github.ref_name }}" = "develop" ]; then
@@ -21,7 +23,6 @@ jobs:
           else
             echo "environment=" >> $GITHUB_OUTPUT
           fi
-          echo "aws_region=sa-east-1" >> $GITHUB_OUTPUT
 
   test:
     name: Java test
@@ -58,3 +59,5 @@ jobs:
     needs: [ set-env, terraform-apply ]
     uses: ./.github/workflows/deploy_ecr.yml
     secrets: inherit
+    with:
+      aws_region: ${{ needs.set-env.outputs.aws_region }}

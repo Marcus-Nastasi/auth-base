@@ -25,12 +25,15 @@ import java.time.LocalDate;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Component
 public class UserRepo implements FindUserPort, SaveUserPort {
 
     private static final String LOG_CODE = "USER-REPO";
+
+    private final Predicate<User> userActiveFilter = u -> u.getInactivatedAt() != null;
 
     private final UserJpaRepo userJpaRepo;
 
@@ -57,7 +60,7 @@ public class UserRepo implements FindUserPort, SaveUserPort {
                 .and(UserSpecificationFilters.hasCpf(cpf))
                 .and(UserSpecificationFilters.hasFirstName(firstName))
                 .and(UserSpecificationFilters.hasLastName(lastName))
-                .and(UserSpecificationFilters.hasBirthDate(String.valueOf(birthDate)))
+                .and(UserSpecificationFilters.hasBirthDate(birthDate))
                 .and(UserSpecificationFilters.hasStatus(status))
                 .and(UserSpecificationFilters.hasRole(userRole));
 

@@ -9,6 +9,7 @@ import com.auth.core.ports.inbound.auth.PasswordEncoderPort;
 import com.auth.core.ports.inbound.auth.TokenPort;
 import com.auth.core.ports.outbound.user.FindUserPort;
 import com.auth.core.shared.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import static java.lang.String.format;
@@ -24,6 +25,7 @@ public class AuthUseCase implements AuthUseCasePort {
 
     private final PasswordEncoderPort passwordEncoderPort;
 
+    @Autowired
     public AuthUseCase(final FindUserPort findUserPort,
                        final TokenPort tokenPort,
                        final PasswordEncoderPort passwordEncoderPort) {
@@ -40,12 +42,13 @@ public class AuthUseCase implements AuthUseCasePort {
 
         Logger.info(LOG_CODE, format("User found: %s", user.getId()), user);
 
+        userActive(user);
         isPasswordEqual(password, user);
         Logger.info(LOG_CODE, "Generating token");
 
         final String accessToken = tokenPort.generateAccessToken(user);
         final String refreshToken = tokenPort.generateRefreshToken(user);
-        final String scopes = (String) tokenPort.getClaim(accessToken, "scope", String.class);
+        final String scopes = String.class.cast(tokenPort.getClaim(accessToken, "scope", String.class));
 
         return AuthLogin.builder()
                 .token(accessToken)
@@ -54,9 +57,13 @@ public class AuthUseCase implements AuthUseCasePort {
                 .build();
     }
 
-    private void isPasswordEqual(final String password, final User user) {
-        if (Boolean.FALSE.equals(passwordEncoderPort.matches(password, user.getPassword()))) {
+    private void userActive(final User user) throws ForbiddenException {
+        if (user.getInactivatedAt() != null)
             throw new ForbiddenException("");
-        }
+    }
+
+    private void isPasswordEqual(final String password, final User user) throws ForbiddenException {
+        if (Boolean.FALSE.equals(passwordEncoderPort.matches(password, user.getPassword())))
+            throw new ForbiddenException("");
     }
 }

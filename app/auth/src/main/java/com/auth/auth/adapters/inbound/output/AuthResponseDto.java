@@ -2,9 +2,12 @@ package com.auth.auth.adapters.inbound.output;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AccessLevel;
+import lombok.Builder;
 
 import java.io.Serializable;
 
+@Builder(access = AccessLevel.PUBLIC)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record AuthResponseDto(
 
