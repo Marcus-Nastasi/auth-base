@@ -8,7 +8,6 @@ on:
 jobs:
   test:
     name: Java test
-    needs: set-env
     uses: ./.github/workflows/test.yml
     secrets: inherit
 
