@@ -32,7 +32,7 @@ jobs:
 
   terraform-validate:
     name: Terraform validate
-    needs: [ set-env, test ]
+    needs: [ set-env ]
     uses: ./.github/workflows/tf_validate.yml
     secrets: inherit
     with:
@@ -40,7 +40,7 @@ jobs:
 
   terraform-apply:
     name: Terraform plan and apply
-    needs: [ set-env, terraform-validate ]
+    needs: [ set-env, test, terraform-validate ]
     uses: ./.github/workflows/tf_apply.yml
     secrets: inherit
     with:

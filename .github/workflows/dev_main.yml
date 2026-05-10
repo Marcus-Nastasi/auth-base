@@ -6,7 +6,13 @@ on:
       - develop
 
 jobs:
+  test:
+    name: Java test
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+
   create-pr:
+    name: Open PR to Main
     runs-on: ubuntu-latest
 
     permissions:

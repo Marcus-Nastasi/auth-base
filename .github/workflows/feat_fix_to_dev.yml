@@ -1,4 +1,4 @@
-name: open PR to develop
+name: Open PR to develop
 
 on:
   push:
@@ -7,7 +7,14 @@ on:
       - 'fix/**'
 
 jobs:
+  test:
+    name: Java test
+    needs: set-env
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+
   open-pr:
+    name: Open PR to Develop
     runs-on: ubuntu-latest
     steps:
       - name: Create PR to develop
