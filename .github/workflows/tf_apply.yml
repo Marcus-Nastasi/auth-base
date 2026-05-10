@@ -1,4 +1,4 @@
-name: Terraform Apply
+name: Terraform Plan & Apply
 
 on:
   workflow_call:
@@ -8,7 +8,36 @@ on:
         type: string
 
 jobs:
+  terraform-plan:
+    name: Terraform plan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code checkout
+        uses: actions/checkout@v4
+
+      - name: AWS config credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: infra
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: infra
+        env:
+          TF_VAR_rsa_private_pem: ${{ secrets.TF_VAR_RSA_PRIVATE_PEM }}
+          TF_VAR_rsa_public_pem: ${{ secrets.TF_VAR_RSA_PUBLIC_PEM }}
+        run: terraform plan -var-file=inventories/${{ inputs.environment }}/terraform.tfvars -out
+
   terraform-apply:
+    name: Terraform apply
     runs-on: ubuntu-latest
     steps:
       - name: Code checkout
