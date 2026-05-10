@@ -40,7 +40,7 @@ jobs:
 
   terraform-apply:
     name: Terraform plan and apply
-    needs: [ set-env, terraform-validate, terraform-plan ]
+    needs: [ set-env, terraform-validate ]
     uses: ./.github/workflows/tf_apply.yml
     secrets: inherit
     with:
