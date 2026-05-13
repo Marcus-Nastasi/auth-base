@@ -43,4 +43,4 @@ jobs:
         env:
           TF_VAR_rsa_private_pem:    ${{ secrets.RSA_PRIVATE_PEM }}
           TF_VAR_rsa_public_pem:     ${{ secrets.RSA_PUBLIC_PEM }}
-        run: terraform apply tfplan -auto-approve
+        run: terraform apply "tfplan" -auto-approve
