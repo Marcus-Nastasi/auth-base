@@ -38,6 +38,7 @@ jobs:
     secrets: inherit
     with:
       environment: ${{ needs.set-env.outputs.environment }}
+      aws_region:  ${{ needs.set-env.outputs.aws_region }}
 
   terraform-apply:
     name: Terraform plan and apply
@@ -46,6 +47,7 @@ jobs:
     secrets: inherit
     with:
       environment: ${{ needs.set-env.outputs.environment }}
+      aws_region:  ${{ needs.set-env.outputs.aws_region }}
 
   build-and-push:
     name: Build and push ECR
