@@ -23,6 +23,7 @@ resource "aws_db_instance" "main" {
   instance_class    = "db.t3.micro"
   allocated_storage = 5
   kms_key_id        = aws_kms_key.kms_default_key.arn
+  storage_encrypted = true
 
   db_name                     = var.db_name
   manage_master_user_password = true
