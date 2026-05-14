@@ -34,8 +34,6 @@ resource "aws_subnet" "private" {
   tags = { Name = "${var.project_name}-private-${count.index}" }
 }
 
-data "aws_availability_zones" "available" {}
-
 # Internet Gateway — permite tráfego externo nas subnets públicas
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
