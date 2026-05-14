@@ -17,6 +17,7 @@ variable "app_port" {
   default = 8080
 }
 
+# Database
 variable "db_username"  {
   type = string
   description = "Usuário do banco"
@@ -30,6 +31,7 @@ variable "db_password"  {
   sensitive = true
 }
 
+# pem files
 variable "rsa_private_pem" {
   description = "Conteúdo do private.pem"
   sensitive   = true
