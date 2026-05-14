@@ -22,6 +22,7 @@ resource "aws_db_instance" "main" {
   engine_version    = "16"
   instance_class    = "db.t3.micro"
   allocated_storage = 5
+  kms_key_id        = aws_kms_key.kms_default_key.id
 
   db_name                     = var.db_name
   manage_master_user_password = true
