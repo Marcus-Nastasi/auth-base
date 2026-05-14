@@ -6,7 +6,7 @@
         <key-type>org.springframework.cache.interceptor.SimpleKey</key-type>
         <value-type>com.auth.core.domain.PageResponse</value-type>
         <expiry>
-            <ttl unit="minutes">5</ttl>
+            <ttl unit="minutes">20</ttl>
         </expiry>
         <resources>
             <heap unit="entries">1000</heap>
