@@ -18,10 +18,16 @@ variable "app_port" {
 }
 
 # Database
+variable "db_name" {
+  type = string
+  description = "Database's name"
+  default = "postgres"
+}
+
 variable "db_username"  {
   type = string
   description = "Usuário do banco"
-  default = ""
+  default = "postgres"
 }
 
 variable "db_password"  {
