@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       environment: ${{ steps.set-env.outputs.environment }}
+      aws_region:  ${{ steps.set-env.outputs.aws_region }}
     steps:
       - name: Define env
         id: set-env
