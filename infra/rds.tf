@@ -24,13 +24,14 @@ resource "aws_db_instance" "main" {
   allocated_storage = 5
 
   db_name  = "postgres"
-  username = var.db_username
-  password = var.db_password
+  manage_master_user_password = true
+  #username = var.db_username
+  #password = var.db_password
+
 
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [ aws_security_group.rds.id ]
 
-  manage_master_user_password = true
   skip_final_snapshot         = true   # mudar para false em produção real
   multi_az                    = false  # mudar para true em produção real
 }
