@@ -35,7 +35,7 @@ public class AuthUseCase implements AuthUseCasePort {
     }
 
     @Override
-    public AuthLogin login(final String email, final String password) {
+    public AuthLogin login(final String email, final String password) throws NotFoundException, ForbiddenException {
         Logger.info(LOG_CODE, format("Payload received: %s", email));
 
         final User user = findUserPort.findUserByCpf(email).orElseThrow(NotFoundException::new);
