@@ -19,7 +19,7 @@ jobs:
 
       - name: Run build
         working-directory: app
-        run: mvn build -DskipTests
+        run: mvn clean install -DskipTests
 
       - name: Run tests
         working-directory: app
