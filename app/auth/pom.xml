@@ -9,7 +9,6 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <groupId>com.auth.auth</groupId>
     <artifactId>auth</artifactId>
 
     <properties>
@@ -19,6 +18,12 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.auth</groupId>
+            <artifactId>application</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
         <dependency>
             <groupId>com.auth.core</groupId>
             <artifactId>core</artifactId>
