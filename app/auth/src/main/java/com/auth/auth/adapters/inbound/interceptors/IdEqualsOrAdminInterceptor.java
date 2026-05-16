@@ -43,9 +43,6 @@ public class IdEqualsOrAdminInterceptor implements HttpInterceptor {
     }
 
     private String getToken(final String tokenHeader) throws ForbiddenException {
-        if (tokenHeader == null)
-            throw new ForbiddenException("");
-
         if (tokenHeader.contains("Bearer"))
             return Arrays
                     .stream(tokenHeader.split(" "))
@@ -64,7 +61,7 @@ public class IdEqualsOrAdminInterceptor implements HttpInterceptor {
         return userId.equals(idFromToken);
     }
 
-    private UserRole extractUserRoleFromScope(DecodedJWT d) {
+    private UserRole extractUserRoleFromScope(final DecodedJWT d) {
         final String scope = Optional.ofNullable(d.getClaim("scope"))
                 .map(Claim::asString)
                 .orElseThrow(() -> new ForbiddenException(""));
