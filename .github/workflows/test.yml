@@ -17,6 +17,10 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      - name: Run build
+        working-directory: app
+        run: mvn clean install -DskipTests
+
       - name: Run tests
         working-directory: app
         run: mvn test
