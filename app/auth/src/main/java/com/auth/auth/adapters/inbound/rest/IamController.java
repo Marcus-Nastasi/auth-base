@@ -4,6 +4,7 @@ import com.auth.auth.adapters.inbound.input.AuthRequestDto;
 import com.auth.auth.adapters.inbound.output.AuthResponseDto;
 import com.auth.core.ports.inbound.auth.AuthUseCasePort;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,7 +21,7 @@ public class IamController {
         this.authUseCasePort = authUseCasePort;
     }
 
-    @PostMapping
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AuthResponseDto> login(@RequestBody @Valid final AuthRequestDto dto) {
         final var login = authUseCasePort.login(dto.cpf(), dto.password());
 
