@@ -25,15 +25,12 @@ import java.time.LocalDate;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Component
 public class UserRepo implements FindUserPort, SaveUserPort {
 
     private static final String LOG_CODE = "USER-REPO";
-
-    private final Predicate<User> userActiveFilter = u -> u.getInactivatedAt() != null;
 
     private final UserJpaRepo userJpaRepo;
 
@@ -46,6 +43,7 @@ public class UserRepo implements FindUserPort, SaveUserPort {
     }
 
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
     public Set<User> findAll(final int page,
                              final int size,
                              final String email,
@@ -95,9 +93,8 @@ public class UserRepo implements FindUserPort, SaveUserPort {
 
             final UserEntity savedUserEntity = entityManager.merge(userEntity);
 
-            if (savedUserEntity == null) {
+            if (savedUserEntity == null)
                 throw new InternalException(Errors.COULD_NOT_SAVE_USER);
-            }
 
             entityManager.flush();
 

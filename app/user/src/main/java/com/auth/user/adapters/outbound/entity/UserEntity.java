@@ -38,7 +38,7 @@ public class UserEntity implements Serializable {
     @Column(name = "email", length = 77, nullable = false)
     private String email;
 
-    @ValidCpf(message = "Cpf cannot be null")
+    @ValidCpf(message = "Invalid cpf")
     @NotNull(message = "Cpf field cannot be null")
     @Size(min = 11, max = 14, message = "Cpf field may have minimal 11 chars, and 14 as maximum")
     @Column(name = "cpf", nullable = false)
