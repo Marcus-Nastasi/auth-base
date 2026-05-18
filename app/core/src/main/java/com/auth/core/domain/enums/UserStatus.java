@@ -16,12 +16,12 @@ public enum UserStatus {
     public static UserStatus fromString(final String status) {
         for (final UserStatus value: UserStatus.values())
             if (value.getStatus().equalsIgnoreCase(status)) return value;
-        throw new RuntimeException("status not found");
+        return null;
     }
 
     public static UserStatus fromCode(final int code) {
         for (final UserStatus value: UserStatus.values())
             if (value.getCode() == code) return value;
-        throw new RuntimeException("status not found");
+        return null;
     }
 }

@@ -25,6 +25,7 @@
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
 
+        <!-- Cache -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
@@ -39,6 +40,13 @@
             <artifactId>ehcache</artifactId>
             <version>3.10.8</version>
             <classifier>jakarta</classifier>
+        </dependency>
+
+        <!-- Tests -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
