@@ -4,26 +4,17 @@ import com.auth.core.domain.User;
 import com.auth.core.domain.enums.UserRole;
 import com.auth.core.domain.enums.UserStatus;
 import com.auth.user.adapters.outbound.mappers.UserEntityMapper;
-import com.auth.user.adapters.outbound.repository.UserJpaRepo;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
+import com.auth.user.adapters.outbound.repository.config.JpaDatabaseTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DataJpaTest
 @Transactional
-@ActiveProfiles("test")
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
-final class UserRepoDatabaseTests {
+final class UserRepoDatabaseTests extends JpaDatabaseTestBase {
 
     private final User user = User.builder()
         .email("dumb@gmail.com")
@@ -40,12 +31,6 @@ final class UserRepoDatabaseTests {
     private User mergedUser;
 
     private UserRepo userRepo;
-
-    @Autowired
-    private UserJpaRepo userJpaRepo;
-
-    @PersistenceContext
-    private EntityManager entityManager;
 
     @BeforeEach
     void setUp() {

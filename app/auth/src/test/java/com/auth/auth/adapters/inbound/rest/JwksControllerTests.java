@@ -1,12 +1,7 @@
 package com.auth.auth.adapters.inbound.rest;
 
-import com.auth.core.ports.inbound.auth.AuthUseCasePort;
-import com.auth.core.ports.inbound.auth.TokenPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -17,15 +12,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 final class JwksControllerTests extends ControllerTestBase {
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockitoBean
-    private TokenPort tokenPort;
-
-    @MockitoBean
-    private AuthUseCasePort authUseCasePort;
 
     private KeyPair keyPair;
 

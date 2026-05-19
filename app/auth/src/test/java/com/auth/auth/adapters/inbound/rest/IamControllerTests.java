@@ -2,15 +2,11 @@ package com.auth.auth.adapters.inbound.rest;
 
 import com.auth.auth.adapters.inbound.input.AuthRequestDto;
 import com.auth.core.domain.AuthLogin;
-import com.auth.core.ports.inbound.auth.AuthUseCasePort;
-import com.auth.core.ports.inbound.auth.TokenPort;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import static org.mockito.ArgumentMatchers.anyString;
@@ -21,15 +17,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 final class IamControllerTests extends ControllerTestBase {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockitoBean
-    private AuthUseCasePort authUseCasePort;
-
-    @MockitoBean
-    private TokenPort tokenPort;
-
     private AuthLogin authLogin;
 
     private AuthRequestDto authRequestDto;
@@ -38,7 +25,7 @@ final class IamControllerTests extends ControllerTestBase {
 
     @BeforeEach
     void setUp() {
-        objectMapper = new ObjectMapper();
+        objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
         authRequestDto = new AuthRequestDto("username", "pass");
         authLogin = AuthLogin.builder()
             .token("maskldmlsadnaskldmas")
