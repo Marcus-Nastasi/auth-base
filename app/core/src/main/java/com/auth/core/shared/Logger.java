@@ -15,11 +15,12 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.UUID;
 
 @Slf4j
 public final class Logger {
 
-    public Logger() {}
+    private Logger() {}
 
     private static final ObjectMapper objectMapper;
 
@@ -61,6 +62,9 @@ public final class Logger {
 
         @JsonProperty("time")
         private final Instant timestamp;
+
+        @JsonProperty("log_id")
+        private final UUID logId;
     }
 
     /**
@@ -77,6 +81,7 @@ public final class Logger {
                 .payload(payload)
                 .exception(throwable != null ? Arrays.toString(throwable.getStackTrace()) : null)
                 .timestamp(LocalDateTime.now(Constants.CLOCK).toInstant(Constants.ZONE_OFFSET))
+                .logId(UUID.randomUUID())
                 .build();
 
         String jsonLog = null;

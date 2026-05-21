@@ -14,6 +14,6 @@ public enum EmailEventVersion {
     public static EmailEventVersion fromString(final String value) {
         for (final EmailEventVersion eventVersion: EmailEventVersion.values())
             if (eventVersion.getValue().equalsIgnoreCase(value)) return eventVersion;
-        throw new RuntimeException("");
+        return null;
     }
 }

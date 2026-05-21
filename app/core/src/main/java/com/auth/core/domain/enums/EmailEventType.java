@@ -13,9 +13,10 @@ public enum EmailEventType {
         this.value = value;
     }
 
-    public static EmailEventType fromString(final String value) {
+    public static EmailEventType fromValue(final String value) {
         for (final var eventType: EmailEventType.values())
-            if (eventType.getValue().equalsIgnoreCase(value)) return eventType;
+            if (eventType.getValue().equalsIgnoreCase(value) || eventType.name().equalsIgnoreCase(value))
+                return eventType;
         return null;
     }
 }
