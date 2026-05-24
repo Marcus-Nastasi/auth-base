@@ -15,7 +15,6 @@ import com.auth.core.ports.outbound.user.FindUserPort;
 import com.auth.core.ports.outbound.user.SaveUserPort;
 import com.auth.core.shared.Constants;
 import com.auth.core.shared.Errors;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,7 +50,6 @@ public class UserUseCase implements UserUseCasePort {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = "get_users")
     public PageResponse<User> findAll(int page,
                                       int size,
                                       final String email,
@@ -117,6 +115,8 @@ public class UserUseCase implements UserUseCasePort {
     )
     public User save(final User user) {
         Logger.info(LOG_CODE, "User save payload received");
+
+        if (user == null) throw new UnprocessableEntityException(Errors.USER_NULL);
 
         User processed;
 

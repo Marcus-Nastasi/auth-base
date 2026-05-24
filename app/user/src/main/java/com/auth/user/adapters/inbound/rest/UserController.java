@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -53,6 +54,7 @@ public class UserController {
         this.idEqualsOrAdminInterceptor = idEqualsOrAdminInterceptor;
     }
 
+    @Cacheable(value = "get_users")
     @GetMapping(produces = APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAllAuthorities('SCOPE_users.read','SCOPE_users.admin')")
     public ResponseEntity<PageResponse<UserByIdResponseDto>> getAll(@RequestParam(value = "page") final int page,

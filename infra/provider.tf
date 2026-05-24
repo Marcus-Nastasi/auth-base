@@ -6,6 +6,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = "3.6.0"
+    }
   }
 
   # Guarda o estado do Terraform no S3 (evita conflitos em time)
