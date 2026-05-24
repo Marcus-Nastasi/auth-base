@@ -2,6 +2,10 @@ package com.auth.core.exceptions;
 
 public class ForbiddenException extends DomainException {
 
+    public ForbiddenException() {
+       super();
+    }
+
     public ForbiddenException(String message) {
         super(message);
     }

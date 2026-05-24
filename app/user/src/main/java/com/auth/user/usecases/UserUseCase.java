@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 import static java.lang.String.format;
+import static java.util.Optional.ofNullable;
 
 @Component
 public class UserUseCase implements UserUseCasePort {
@@ -139,11 +140,6 @@ public class UserUseCase implements UserUseCasePort {
         final User user = findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
         Logger.info(LOG_CODE, "User found: ", user);
 
-//        if (!user.getId().equals(userId)) {
-//            log.warn("User found id is different than passed user id");
-//            throw new ForbiddenException();
-//        }
-
         if (user.getStatus().getCode() == UserStatus.ACTIVE.getCode()) {
             Logger.info(LOG_CODE, "User is already active");
             throw new UnprocessableEntityException(Errors.USER_ALREADY_ACTIVE);
@@ -229,7 +225,7 @@ public class UserUseCase implements UserUseCasePort {
 
         Logger.info(LOG_CODE, "Updating user...");
 
-        return Optional.ofNullable(saveUserPort.save(existingUser.update(user, moment))).map(u -> {
+        return ofNullable(saveUserPort.save(existingUser.update(user, moment))).map(u -> {
             Logger.info(LOG_CODE, "Successfully updated user: ", u);
             return u;
         }).orElseThrow(() -> {
