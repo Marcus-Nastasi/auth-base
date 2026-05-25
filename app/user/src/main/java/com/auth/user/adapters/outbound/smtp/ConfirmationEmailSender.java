@@ -14,7 +14,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Optional;
 import java.util.Properties;
+
+import static java.util.Optional.ofNullable;
 
 @Service
 @ConditionalOnProperty(value = "spring.mail.enable", havingValue = "true")
@@ -51,8 +54,7 @@ public class ConfirmationEmailSender implements ConfirmationEmailSenderPort {
     @Override
     public void send(final User data) {
         try {
-            final String token = tokenPort.generateEmailConfirmationToken(data);
-            if (token == null) throw new ForbiddenException("");
+            final String token = ofNullable(tokenPort.generateEmailConfirmationToken(data)).orElseThrow(ForbiddenException::new);
 
             final Properties props = setProperties();
             final Session session = createSession(props);
@@ -77,7 +79,7 @@ public class ConfirmationEmailSender implements ConfirmationEmailSenderPort {
     private Session createSession(final Properties props) {
         return Session.getInstance(props, new Authenticator() {
             protected PasswordAuthentication getPasswordAuthentication() {
-            return new PasswordAuthentication(username, password);
+                return new PasswordAuthentication(username, password);
             }
         });
     }

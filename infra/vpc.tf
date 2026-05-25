@@ -31,7 +31,12 @@ resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.${count.index + 10}.0/24"
   availability_zone = data.aws_availability_zones.available.names[count.index]
-  tags = { Name = "${var.project_name}-private-${count.index}" }
+
+  tags = {
+    Name = "${var.project_name}-private-${count.index}"
+    Env     = var.environment
+    Project = var.project_name
+  }
 }
 
 # Internet Gateway — permite tráfego externo nas subnets públicas
@@ -42,6 +47,7 @@ resource "aws_internet_gateway" "main" {
 # Route table para subnets públicas
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
+
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.main.id

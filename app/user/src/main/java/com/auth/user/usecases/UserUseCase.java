@@ -15,7 +15,6 @@ import com.auth.core.ports.outbound.user.FindUserPort;
 import com.auth.core.ports.outbound.user.SaveUserPort;
 import com.auth.core.shared.Constants;
 import com.auth.core.shared.Errors;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 import static java.lang.String.format;
+import static java.util.Optional.ofNullable;
 
 @Component
 public class UserUseCase implements UserUseCasePort {
@@ -51,7 +51,6 @@ public class UserUseCase implements UserUseCasePort {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = "get_users")
     public PageResponse<User> findAll(int page,
                                       int size,
                                       final String email,
@@ -118,6 +117,8 @@ public class UserUseCase implements UserUseCasePort {
     public User save(final User user) {
         Logger.info(LOG_CODE, "User save payload received");
 
+        if (user == null) throw new UnprocessableEntityException(Errors.USER_NULL);
+
         User processed;
 
         if (user.getId() == null) {
@@ -138,11 +139,6 @@ public class UserUseCase implements UserUseCasePort {
 
         final User user = findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
         Logger.info(LOG_CODE, "User found: ", user);
-
-//        if (!user.getId().equals(userId)) {
-//            log.warn("User found id is different than passed user id");
-//            throw new ForbiddenException();
-//        }
 
         if (user.getStatus().getCode() == UserStatus.ACTIVE.getCode()) {
             Logger.info(LOG_CODE, "User is already active");
@@ -229,7 +225,7 @@ public class UserUseCase implements UserUseCasePort {
 
         Logger.info(LOG_CODE, "Updating user...");
 
-        return Optional.ofNullable(saveUserPort.save(existingUser.update(user, moment))).map(u -> {
+        return ofNullable(saveUserPort.save(existingUser.update(user, moment))).map(u -> {
             Logger.info(LOG_CODE, "Successfully updated user: ", u);
             return u;
         }).orElseThrow(() -> {

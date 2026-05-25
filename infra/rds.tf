@@ -6,7 +6,7 @@ resource "aws_security_group" "rds" {
   ingress {
     from_port  = 5432
     to_port    = 5432
-    protocol   = "tcp"
+    protocol   = var.db_ingress_protocol
     #security_groups = []
   }
 }
@@ -18,21 +18,21 @@ resource "aws_db_subnet_group" "main" {
 
 resource "aws_db_instance" "main" {
   identifier        = "${var.project_name}-db-${var.environment}"
-  engine            = "postgres"
-  engine_version    = "16"
-  instance_class    = "db.t3.micro"
-  allocated_storage = 5
+  engine            = var.db_engine
+  engine_version    = var.db_engine_version
+  instance_class    = var.db_instance_class
+  allocated_storage = var.db_allocated_storage
   kms_key_id        = aws_kms_key.kms_default_key.arn
   storage_encrypted = true
 
   db_name                     = var.db_name
-  manage_master_user_password = true
+  manage_master_user_password = var.db_manage_master_user_password
   username                    = var.db_username
   #password = var.db_password
 
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [ aws_security_group.rds.id ]
 
-  skip_final_snapshot         = true   # mudar para false em produção real
-  multi_az                    = false  # mudar para true em produção real
+  skip_final_snapshot = var.db_skip_final_snapshot   # mudar para false em produção real
+  multi_az            = var.db_multi_az  # mudar para true em produção real
 }

@@ -26,8 +26,7 @@ public class ValidEmailValidator implements ConstraintValidator<ValidEmail, Stri
     public boolean isValid(final String s, final ConstraintValidatorContext context) {
         context.disableDefaultConstraintViolation();
 
-        if (s == null || s.isBlank())
-            return true;
+        if (s == null || s.isBlank()) return true;
 
         if (s.length() > 77 || !EMAIL_PATTERN.matcher(s).matches()) {
             writeContext(context, message, fieldName);

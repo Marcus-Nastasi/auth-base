@@ -6,6 +6,8 @@ import java.io.Serializable;
 
 public class DomainException extends RuntimeException implements Serializable {
 
+    public DomainException() {}
+
     public DomainException(String message) {
         super(message);
     }
