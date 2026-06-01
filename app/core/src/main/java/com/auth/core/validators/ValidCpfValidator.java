@@ -25,12 +25,7 @@ public class ValidCpfValidator implements ConstraintValidator<ValidCpf, String> 
 
     @Override
     public boolean isValid(final String s, final ConstraintValidatorContext context) {
-        if (s == null || s.length() != 11) {
-            writeContext(context, message, fieldName);
-            return false;
-        }
-
-        if (!isNumeric(s)) {
+        if (s == null || s.length() != 11 || !isNumeric(s)) {
             writeContext(context, message, fieldName);
             return false;
         }

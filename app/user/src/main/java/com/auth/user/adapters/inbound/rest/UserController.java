@@ -39,18 +39,16 @@ import static org.springframework.http.MediaType.TEXT_HTML_VALUE;
 public class UserController {
 
     private final UserUseCasePort useCase;
-
-    private final TokenPort tokenPort;
-
+//    private final TokenPort tokenPort;
     private final HttpInterceptor idEqualsOrAdminInterceptor;
 
     @Autowired
     public UserController(final UserUseCasePort useCase,
-                          final TokenPort tokenPort,
+                          //final TokenPort tokenPort,
                           @Qualifier("IdEqualsOrAdminInterceptor")
                           final HttpInterceptor idEqualsOrAdminInterceptor) {
         this.useCase = useCase;
-        this.tokenPort = tokenPort;
+        //this.tokenPort = tokenPort;
         this.idEqualsOrAdminInterceptor = idEqualsOrAdminInterceptor;
     }
 
@@ -115,25 +113,25 @@ public class UserController {
         final var response = new SuperSetResponseDto<>(UserResponseMapper.INSTANCE.toUserByIdResponse(user));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-
-    @GetMapping(value = "/activate", produces = TEXT_HTML_VALUE)
-    public ResponseEntity<String> activate(@RequestParam("token") String token) {
-        try {
-            final DecodedJWT d = (DecodedJWT) tokenPort.validate(token);
-            final String email = d.getClaim("email").asString();
-            final UUID userId = UUID.fromString(d.getSubject());
-
-            final User user = useCase.activate(email, userId);
-
-            final var responseMessage = String.format("""
-                <h2>Seu e-mail %s está ativo, feche a aba e faça o login.</h2>
-            """, user.getEmail());
-
-            return ResponseEntity.accepted().body(responseMessage);
-        } catch (Exception e) {
-            throw new ForbiddenException(e.getMessage(), e);
-        }
-    }
+//
+//    @GetMapping(value = "/activate", produces = TEXT_HTML_VALUE)
+//    public ResponseEntity<String> activate(@RequestParam("token") String token) {
+//        try {
+//            final DecodedJWT d = (DecodedJWT) tokenPort.validate(token);
+//            final String email = d.getClaim("email").asString();
+//            final UUID userId = UUID.fromString(d.getSubject());
+//
+//            final User user = useCase.activate(email, userId);
+//
+//            final var responseMessage = String.format("""
+//                <h2>Seu e-mail %s está ativo, feche a aba e faça o login.</h2>
+//            """, user.getEmail());
+//
+//            return ResponseEntity.accepted().body(responseMessage);
+//        } catch (Exception e) {
+//            throw new ForbiddenException(e.getMessage(), e);
+//        }
+//    }
 
     @GetMapping(value = "/resend", produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<String> resendEmail(@RequestParam("email") String email) {
