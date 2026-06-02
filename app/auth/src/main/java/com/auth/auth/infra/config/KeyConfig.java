@@ -9,7 +9,9 @@ import com.nimbusds.jose.proc.SecurityContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 
 import java.security.interfaces.RSAPrivateKey;
@@ -26,15 +28,23 @@ public class KeyConfig {
       final RSAPrivateKey privateKey = PemUtils.readPrivateKey(privateKeyPath);
 
       final RSAKey rsaKey = new RSAKey.Builder(publicKey)
-              .privateKey(privateKey)
-              .keyID(kid)
-              .build();
+           .privateKey(privateKey)
+           .keyID(kid)
+           .build();
 
       return new ImmutableJWKSet<>(new JWKSet(rsaKey));
    }
 
    @Bean
-   public JwtEncoder jwtEncoder(final JWKSource<SecurityContext> jwkSource) {
-      return new NimbusJwtEncoder(jwkSource);
+   public JwtEncoder jwtEncoder(@Value("${spring.security.key.private.path}") final String privateKeyPath,
+                                @Value("${spring.security.key.public.path}") final String publicKeyPath) throws Exception {
+      final var privateKey = PemUtils.readPrivateKey(privateKeyPath);
+      final var publicKey = PemUtils.readPublicKey(publicKeyPath);
+      return NimbusJwtEncoder.withKeyPair(publicKey, privateKey).build();
+   }
+
+   @Bean
+   public JwtDecoder jwtDecoder(@Value("${spring.security.key.public.path}") final String publicKeyPath) throws Exception {
+      return NimbusJwtDecoder.withPublicKey(PemUtils.readPublicKey(publicKeyPath)).build();
    }
 }

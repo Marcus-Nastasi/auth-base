@@ -22,10 +22,10 @@ public class TokenCustomizer {
          try {
             final UUID userId = UUID.fromString(principalName);
             findUserPort.findById(userId).ifPresent(user ->
-                    context.getClaims()
-                         .claim("email", user.getEmail())
-                         .claim("cpf", user.getCpf())
-                         .claim("typ", "access"));
+                 context.getClaims()
+                      .claim("email", user.getEmail())
+                      .claim("cpf", user.getCpf())
+                      .claim("typ", "access"));
          } catch (IllegalArgumentException ignored) {
             // client_credentials: principal é o client_id, não um UUID de usuário
             context.getClaims().claim("typ", "access");

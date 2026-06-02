@@ -14,6 +14,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
@@ -26,60 +27,58 @@ import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 @EnableMethodSecurity
 public class AuthorizationServerConfig {
 
-   private final OAuth2AuthorizationServerConfigurer authorizationServerConfigurer;
    private final FindUserPort findUserPort;
    private final PasswordEncoderPort passwordEncoderPort;
    private final OAuth2AuthorizationService authorizationService;
+   //private final AuthorizationServerSettings authorizationServerSettings;
    private final OAuth2TokenGenerator<?> tokenGenerator;
+   private final JwtDecoder jwtDecoder;
+   private final String issuer;
 
-   public AuthorizationServerConfig(final OAuth2AuthorizationServerConfigurer authorizationServerConfigurer,
-                                    final FindUserPort findUserPort,
+   public AuthorizationServerConfig(final FindUserPort findUserPort,
                                     final PasswordEncoderPort passwordEncoderPort,
                                     final OAuth2AuthorizationService authorizationService,
-                                    final OAuth2TokenGenerator<?> tokenGenerator) {
-      this.authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
+                                    final OAuth2TokenGenerator<?> tokenGenerator,
+                                    final JwtDecoder jwtDecoder,
+                                    @Value("${spring.security.oauth2.issuer}")
+                                     final String issuer) {
       this.findUserPort = findUserPort;
       this.passwordEncoderPort = passwordEncoderPort;
       this.authorizationService = authorizationService;
       this.tokenGenerator = tokenGenerator;
+      this.jwtDecoder = jwtDecoder;
+      this.issuer = issuer;
    }
 
    @Bean
    @Order(1)
    public SecurityFilterChain authorizationServerSecurityFilterChain(final HttpSecurity http) {
-      authorizationServerConfigurer.init(http);
-
-      http.securityMatcher(
-           authorizationServerConfigurer.getEndpointsMatcher()
-      );
+      final var authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
 
       final var converter = new CustomPasswordGrantAuthenticationConverter();
       final var provider = new CustomPasswordGrantAuthenticationProvider(
            findUserPort, passwordEncoderPort, authorizationService, tokenGenerator
       );
 
-      http.securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
-              .with(authorizationServerConfigurer, configurer -> configurer
-              .tokenEndpoint(endpoint -> endpoint
-                      .authenticationProvider(provider)
-                      .accessTokenRequestConverter(converter))
-              .oidc(Customizer.withDefaults()))
-              .exceptionHandling(ex ->
-                   ex.defaultAuthenticationEntryPointFor(
-                        new LoginUrlAuthenticationEntryPoint("/oauth2/token"),
-                        new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
-                   )
-              )
-              .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
+      http
+           .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
+           .with(
+               authorizationServerConfigurer,
+               configurer -> configurer
+                    .authorizationServerSettings(AuthorizationServerSettings.builder().issuer(issuer).build())
+                    .tokenEndpoint(endpoint -> endpoint.authenticationProvider(provider).accessTokenRequestConverter(converter))
+                    .oidc(oidcConfigurer -> oidcConfigurer.clientRegistrationEndpoint(Customizer.withDefaults()))
+           );
+
+      http.exceptionHandling(ex ->
+           ex.defaultAuthenticationEntryPointFor(
+                new LoginUrlAuthenticationEntryPoint("/oauth2/token"),
+                new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
+           )
+      );
+
+      http.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(jwtDecoder)));
 
       return http.build();
-   }
-
-   @Bean
-   public AuthorizationServerSettings authorizationServerSettings(@Value("${spring.security.oauth2.issuer}")
-                                                                     final String issuer) {
-      return AuthorizationServerSettings.builder()
-           .issuer(issuer)
-           .build();
    }
 }
