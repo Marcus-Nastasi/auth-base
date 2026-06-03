@@ -6,7 +6,6 @@ import com.auth.core.domain.enums.UserRole;
 import com.auth.core.domain.enums.UserStatus;
 import com.auth.core.exceptions.ForbiddenException;
 import com.auth.core.ports.inbound.auth.HttpInterceptor;
-import com.auth.core.ports.inbound.auth.TokenPort;
 import com.auth.core.ports.inbound.user.UserUseCasePort;
 import com.auth.user.adapters.inbound.input.UserRequestDto;
 import com.auth.user.adapters.inbound.input.UserUpdateRequestDto;
@@ -14,7 +13,6 @@ import com.auth.user.adapters.inbound.mappers.UserRequestMapper;
 import com.auth.user.adapters.inbound.mappers.UserResponseMapper;
 import com.auth.user.adapters.inbound.output.SuperSetResponseDto;
 import com.auth.user.adapters.inbound.output.UserByIdResponseDto;
-import com.auth0.jwt.interfaces.DecodedJWT;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +21,9 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,21 +36,24 @@ import static org.springframework.http.MediaType.TEXT_HTML_VALUE;
 
 @Validated
 @RestController
-@RequestMapping(value = "/api/v1/user")
+@RequestMapping(value = "/api/v1/users")
 public class UserController {
 
     private final UserUseCasePort useCase;
-//    private final TokenPort tokenPort;
     private final HttpInterceptor idEqualsOrAdminInterceptor;
+    private final JwtDecoder jwtDecoder;
+    private final OAuth2TokenGenerator<?> tokenGenerator;
 
     @Autowired
     public UserController(final UserUseCasePort useCase,
-                          //final TokenPort tokenPort,
                           @Qualifier("IdEqualsOrAdminInterceptor")
-                          final HttpInterceptor idEqualsOrAdminInterceptor) {
+                          final HttpInterceptor idEqualsOrAdminInterceptor,
+                          final JwtDecoder jwtDecoder,
+                          final OAuth2TokenGenerator<?> tokenGenerator) {
         this.useCase = useCase;
-        //this.tokenPort = tokenPort;
         this.idEqualsOrAdminInterceptor = idEqualsOrAdminInterceptor;
+        this.jwtDecoder = jwtDecoder;
+        this.tokenGenerator = tokenGenerator;
     }
 
     @Cacheable(value = "get_users")
@@ -113,25 +117,26 @@ public class UserController {
         final var response = new SuperSetResponseDto<>(UserResponseMapper.INSTANCE.toUserByIdResponse(user));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-//
-//    @GetMapping(value = "/activate", produces = TEXT_HTML_VALUE)
-//    public ResponseEntity<String> activate(@RequestParam("token") String token) {
-//        try {
-//            final DecodedJWT d = (DecodedJWT) tokenPort.validate(token);
-//            final String email = d.getClaim("email").asString();
-//            final UUID userId = UUID.fromString(d.getSubject());
-//
-//            final User user = useCase.activate(email, userId);
-//
-//            final var responseMessage = String.format("""
-//                <h2>Seu e-mail %s está ativo, feche a aba e faça o login.</h2>
-//            """, user.getEmail());
-//
-//            return ResponseEntity.accepted().body(responseMessage);
-//        } catch (Exception e) {
-//            throw new ForbiddenException(e.getMessage(), e);
-//        }
-//    }
+
+    @PreAuthorize("hasAuthorities('SCOPE_email.activate')")
+    @GetMapping(value = "/activate", produces = TEXT_HTML_VALUE)
+    public ResponseEntity<String> activate(@RequestParam("token") String token) {
+        try {
+            final Jwt d = jwtDecoder.decode(token);
+            final String email = d.getClaim("email").toString();
+            final UUID userId = UUID.fromString(d.getSubject());
+
+            final User user = useCase.activate(email, userId);
+
+            final var responseMessage = String.format("""
+                <h2>Seu e-mail %s está ativo, feche a aba e faça o login.</h2>
+            """, user.getEmail());
+
+            return ResponseEntity.accepted().body(responseMessage);
+        } catch (Exception e) {
+            throw new ForbiddenException(e.getMessage(), e);
+        }
+    }
 
     @GetMapping(value = "/resend", produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<String> resendEmail(@RequestParam("email") String email) {

@@ -5,11 +5,13 @@ import com.auth.core.domain.enums.UserRole;
 import com.auth.core.ports.inbound.auth.PasswordEncoderPort;
 import com.auth.core.ports.outbound.user.FindUserPort;
 import lombok.NonNull;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.*;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
@@ -47,6 +49,7 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
    @Transactional(readOnly = true)
    public Authentication authenticate(@NonNull final Authentication authentication) throws AuthenticationException {
       final var token = CustomPasswordGrantAuthenticationToken.class.cast(authentication);
+      SecurityContextHolder.getContext().setAuthentication(token);
 
       final OAuth2ClientAuthenticationToken clientPrincipal = extractClientPrincipal(token);
       final RegisteredClient registeredClient = clientPrincipal.getRegisteredClient();
@@ -95,10 +98,6 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
               generatedAccessToken.getExpiresAt(),
               authorizedScopes);
 
-      // Gera refresh token
-//      if (registeredClient.getAuthorizationGrantTypes().contains(
-//              org.springframework.security.oauth2.core.AuthorizationGrantType.REFRESH_TOKEN)) {
-
       final DefaultOAuth2TokenContext refreshTokenContext = DefaultOAuth2TokenContext.builder()
               .registeredClient(registeredClient)
               .principal(userPrincipal)
@@ -143,13 +142,7 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
       return CustomPasswordGrantAuthenticationToken.class.isAssignableFrom(authentication);
    }
 
-   private OAuth2ClientAuthenticationToken extractClientPrincipal(final Authentication authentication) {
-//      final var principal = authentication.getPrincipal();
-
-//      if (principal instanceof OAuth2ClientAuthenticationToken cat && cat.isAuthenticated()) {
-//         return cat.getRegisteredClient();
-//      }
-
+   private OAuth2ClientAuthenticationToken extractClientPrincipal(final Authentication authentication) throws OAuth2AuthenticationException {
       if (authentication.getPrincipal() instanceof OAuth2ClientAuthenticationToken authenticationToken)
          return authenticationToken;
       else
@@ -163,11 +156,14 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
            ? Set.of("users.read", "users.write", "users.admin")
            : Set.of("users.read", "users.write", "users.user");
 
-      final Set<String> base = requestedScopes.isEmpty() ? userScopes : requestedScopes;
+      if (CollectionUtils.isNotEmpty(requestedScopes)) {
+         requestedScopes.addAll(userScopes);
+         return requestedScopes.stream()
+              .filter(userScopes::contains)
+              .filter(s -> registeredClient.getScopes().contains(s))
+              .collect(Collectors.toSet());
+      }
 
-      return base.stream()
-           .filter(userScopes::contains)
-           .filter(s -> registeredClient.getScopes().contains(s))
-           .collect(Collectors.toSet());
+      return userScopes;
    }
 }

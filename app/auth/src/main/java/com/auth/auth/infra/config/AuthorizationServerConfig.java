@@ -30,7 +30,6 @@ public class AuthorizationServerConfig {
    private final FindUserPort findUserPort;
    private final PasswordEncoderPort passwordEncoderPort;
    private final OAuth2AuthorizationService authorizationService;
-   //private final AuthorizationServerSettings authorizationServerSettings;
    private final OAuth2TokenGenerator<?> tokenGenerator;
    private final JwtDecoder jwtDecoder;
    private final String issuer;
