@@ -1,7 +1,10 @@
 package com.auth.auth.adapters.inbound.rest;
 
 import com.auth.auth.adapters.inbound.input.ClientRegistrationRequest;
+import com.auth.auth.adapters.inbound.mappers.ClientRegistrationDtoMapper;
+import com.auth.core.exceptions.ForbiddenException;
 import com.auth.core.ports.inbound.auth.PasswordEncoderPort;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,9 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -36,33 +37,62 @@ public class ClientRegistrationController {
 
    @PostMapping
    @PreAuthorize("hasAuthority('SCOPE_client.create')")
-   public ResponseEntity<?> register(@RequestBody final ClientRegistrationRequest request) {
+   public ResponseEntity<Object> register(@RequestBody final ClientRegistrationRequest request) {
       final var clientId = UUID.randomUUID();
       final var clientSecret = UUID.randomUUID();
 
-      final RegisteredClient client = RegisteredClient.withId(UUID.randomUUID().toString())
+      RegisteredClient.Builder clientBuilder = RegisteredClient.withId(UUID.randomUUID().toString())
            .clientId(clientId.toString())
            .clientSecret(passwordEncoderPort.encode(clientSecret.toString()))
            .clientName(request.clientName())
-           .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-           .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-           .scopes(scopes -> scopes.addAll(Arrays.stream(request.scopes().split(" ")).collect(Collectors.toSet())))
-           .tokenSettings(TokenSettings.builder()
-                .accessTokenTimeToLive(Duration.ofMinutes(30))
-                .build())
-           .build();
+           .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC);
+
+      final var scopesSet = Arrays.stream(request.scopes().split(" ")).collect(Collectors.toSet());
+
+      if (CollectionUtils.isNotEmpty(request.redirectUris())) {
+         clientBuilder
+              .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+              .scopes(scopes -> scopes.addAll(scopesSet))
+              .tokenSettings(TokenSettings.builder()
+                   .accessTokenTimeToLive(Duration.ofMinutes(30))
+                   .build());
+
+         resolveGrantTypes(request.grantTypes()).forEach(clientBuilder::authorizationGrantType);
+
+         request.redirectUris().forEach(clientBuilder::redirectUri);
+      } else {
+         clientBuilder
+              .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+              .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+              .scopes(scopes -> scopes.addAll(scopesSet))
+              .tokenSettings(TokenSettings.builder()
+                   .accessTokenTimeToLive(Duration.ofMinutes(30))
+                   .build());
+      }
+
+      final var client = clientBuilder.build();
 
       registeredClientRepository.save(client);
 
-      return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-           "client_id",
-           client.getClientId(),
-           "client_secret",
-           clientSecret,
-           "grant_types",
-           client.getAuthorizationGrantTypes(),
-           "scopes",
-           client.getScopes()
-      ));
+      return ResponseEntity.status(HttpStatus.CREATED).body(ClientRegistrationDtoMapper.INSTANCE.response(client, clientSecret));
+   }
+
+   private Set<AuthorizationGrantType> resolveGrantTypes(final List<String> stringsGrantType) {
+      if (CollectionUtils.isEmpty(stringsGrantType)) return Collections.emptySet();
+      return stringsGrantType.stream()
+           .filter(Objects::nonNull)
+           .map(s ->
+              switch (s) {
+                 case "authorization_code" -> AuthorizationGrantType.AUTHORIZATION_CODE;
+                 case "client_credentials" -> AuthorizationGrantType.CLIENT_CREDENTIALS;
+                 case "refresh_token" -> AuthorizationGrantType.REFRESH_TOKEN;
+                 case "urn:ietf:params:oauth:grant-type:jwt-bearer" -> AuthorizationGrantType.JWT_BEARER;
+                 case "urn:ietf:params:oauth:grant-type:device_code" -> AuthorizationGrantType.DEVICE_CODE;
+                 case "urn:ietf:params:oauth:grant-type:token-exchange" -> AuthorizationGrantType.TOKEN_EXCHANGE;
+                 case "urn:custom:grant-type:password" -> new AuthorizationGrantType("urn:custom:grant-type:password");
+                 default -> throw new ForbiddenException("Invalid grant type: "+s);
+              }
+           )
+           .collect(Collectors.toSet());
    }
 }

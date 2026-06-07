@@ -14,6 +14,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
+import org.springframework.security.oauth2.core.OAuth2Token;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
@@ -30,14 +31,14 @@ public class AuthorizationServerConfig {
    private final FindUserPort findUserPort;
    private final PasswordEncoderPort passwordEncoderPort;
    private final OAuth2AuthorizationService authorizationService;
-   private final OAuth2TokenGenerator<?> tokenGenerator;
+   private final OAuth2TokenGenerator<OAuth2Token> tokenGenerator;
    private final JwtDecoder jwtDecoder;
    private final String issuer;
 
    public AuthorizationServerConfig(final FindUserPort findUserPort,
                                     final PasswordEncoderPort passwordEncoderPort,
                                     final OAuth2AuthorizationService authorizationService,
-                                    final OAuth2TokenGenerator<?> tokenGenerator,
+                                    final OAuth2TokenGenerator<OAuth2Token> tokenGenerator,
                                     final JwtDecoder jwtDecoder,
                                     @Value("${spring.security.oauth2.issuer}")
                                      final String issuer) {

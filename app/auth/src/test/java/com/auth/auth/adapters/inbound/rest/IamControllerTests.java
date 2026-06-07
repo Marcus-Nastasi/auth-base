@@ -1,6 +1,5 @@
 package com.auth.auth.adapters.inbound.rest;
 
-import com.auth.auth.adapters.inbound.input.AuthRequestDto;
 import com.auth.core.domain.AuthLogin;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;

@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.Set;
 
 @JsonInclude
 public record ClientRegistrationRequest(
@@ -14,5 +13,7 @@ public record ClientRegistrationRequest(
      @JsonProperty("grant_types")
      List<String> grantTypes,
      @JsonProperty("scopes")
-     String scopes
+     String scopes,
+     @JsonProperty("redirect_uris")
+     List<String> redirectUris
 ) implements Serializable {}

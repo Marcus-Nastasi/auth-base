@@ -4,14 +4,17 @@ import com.auth.core.shared.Errors;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Set;
+
 @Getter
 @RequiredArgsConstructor
 public enum UserRole {
 
-    ADMIN("ADMIN"),
-    USER("USER");
+    ADMIN("ADMIN", Set.of("users.read", "users.write", "users.admin")),
+    USER("USER", Set.of("users.read", "users.write", "users.user"));
 
     private final String role;
+    private final Set<String> scopes;
 
     public static UserRole fromString(final String role) {
         for (final UserRole value: UserRole.values())

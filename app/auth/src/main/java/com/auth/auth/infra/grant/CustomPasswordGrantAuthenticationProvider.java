@@ -1,7 +1,6 @@
 package com.auth.auth.infra.grant;
 
 import com.auth.core.domain.User;
-import com.auth.core.domain.enums.UserRole;
 import com.auth.core.ports.inbound.auth.PasswordEncoderPort;
 import com.auth.core.ports.outbound.user.FindUserPort;
 import lombok.NonNull;
@@ -22,6 +21,8 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.context.AuthorizationServerContextHolder;
 import org.springframework.security.oauth2.server.authorization.token.DefaultOAuth2TokenContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
@@ -33,12 +34,12 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
    private final FindUserPort findUserPort;
    private final PasswordEncoderPort passwordEncoderPort;
    private final OAuth2AuthorizationService authorizationService;
-   private final OAuth2TokenGenerator<?> tokenGenerator;
+   private final OAuth2TokenGenerator<OAuth2Token> tokenGenerator;
 
    public CustomPasswordGrantAuthenticationProvider(final FindUserPort findUserPort,
                                                     final PasswordEncoderPort passwordEncoderPort,
                                                     final OAuth2AuthorizationService authorizationService,
-                                                    final OAuth2TokenGenerator<?> tokenGenerator) {
+                                                    final OAuth2TokenGenerator<OAuth2Token> tokenGenerator) {
       this.findUserPort = findUserPort;
       this.passwordEncoderPort = passwordEncoderPort;
       this.authorizationService = authorizationService;
@@ -46,28 +47,29 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
    }
 
    @Override
-   @Transactional(readOnly = true)
+   @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED, timeout = 10, rollbackFor = Exception.class)
    public Authentication authenticate(@NonNull final Authentication authentication) throws AuthenticationException {
-      final var token = CustomPasswordGrantAuthenticationToken.class.cast(authentication);
-      SecurityContextHolder.getContext().setAuthentication(token);
+      final CustomPasswordGrantAuthenticationToken customPasswordGrantAuthenticationToken =
+              CustomPasswordGrantAuthenticationToken.class.cast(authentication);
+      final AuthorizationGrantType grantType = customPasswordGrantAuthenticationToken.getGrantType();
 
-      final OAuth2ClientAuthenticationToken clientPrincipal = extractClientPrincipal(token);
+      SecurityContextHolder.getContext().setAuthentication(customPasswordGrantAuthenticationToken);
+
+      final OAuth2ClientAuthenticationToken clientPrincipal = extractClientPrincipal(customPasswordGrantAuthenticationToken);
       final RegisteredClient registeredClient = clientPrincipal.getRegisteredClient();
 
-      if (registeredClient == null
-              || registeredClient.getAuthorizationGrantTypes() == null
-              || !registeredClient.getAuthorizationGrantTypes().contains(token.getGrantType()))
+      if (unauthorizedGrant(registeredClient, grantType))
          throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
 
-      final User user = findUserPort.findUserByCpf(token.getCpf())
+      final User user = findUserPort.findUserByCpf(customPasswordGrantAuthenticationToken.getCpf())
               .orElseThrow(() -> new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED));
       if (user.getInactivatedAt() != null)
          throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);
 
-      if (!passwordEncoderPort.matches(token.getPassword(), user.getPassword()))
+      if (!passwordEncoderPort.matches(customPasswordGrantAuthenticationToken.getPassword(), user.getPassword()))
          throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);
 
-      final Set<String> authorizedScopes = resolveScopes(user, registeredClient, token.getScopes());
+      final Set<String> authorizedScopes = resolveScopes(user, registeredClient, customPasswordGrantAuthenticationToken.getScopes());
 
       final UsernamePasswordAuthenticationToken userPrincipal = new UsernamePasswordAuthenticationToken(
            user.getId().toString(),
@@ -75,61 +77,32 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
            authorizedScopes.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toSet())
       );
 
-      // Gera contexto para criação dos tokens
-      final DefaultOAuth2TokenContext accessTokenContext = DefaultOAuth2TokenContext.builder()
-              .registeredClient(registeredClient)
-              .principal(userPrincipal)
-              .authorizationServerContext(AuthorizationServerContextHolder.getContext())
-              .authorizedScopes(authorizedScopes)
-              .tokenType(OAuth2TokenType.ACCESS_TOKEN)
-              .authorizationGrantType(token.getGrantType())
-              .authorizationGrant(token)
-              .build();
+      final OAuth2AccessToken accessToken = OAuth2AccessToken.class.cast(generateToken(
+           registeredClient,
+           userPrincipal,
+           authorizedScopes,
+           grantType,
+           customPasswordGrantAuthenticationToken,
+           false
+      ));
 
-      // Gera access token
-      final OAuth2Token generatedAccessToken = tokenGenerator.generate(accessTokenContext);
-      if (generatedAccessToken == null)
-         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.SERVER_ERROR);
+      final OAuth2RefreshToken refreshToken = OAuth2RefreshToken.class.cast(generateToken(
+           registeredClient,
+           userPrincipal,
+           authorizedScopes,
+           grantType,
+           customPasswordGrantAuthenticationToken,
+           true
+      ));
 
-      final OAuth2AccessToken accessToken = new OAuth2AccessToken(
-              OAuth2AccessToken.TokenType.BEARER,
-              generatedAccessToken.getTokenValue(),
-              generatedAccessToken.getIssuedAt(),
-              generatedAccessToken.getExpiresAt(),
-              authorizedScopes);
-
-      final DefaultOAuth2TokenContext refreshTokenContext = DefaultOAuth2TokenContext.builder()
-              .registeredClient(registeredClient)
-              .principal(userPrincipal)
-              .authorizationServerContext(AuthorizationServerContextHolder.getContext())
-              .authorizedScopes(authorizedScopes)
-              .tokenType(OAuth2TokenType.REFRESH_TOKEN)
-              .authorizationGrantType(token.getGrantType())
-              .authorizationGrant(token)
-              .build();
-
-      final OAuth2Token generatedRefreshToken = tokenGenerator.generate(refreshTokenContext);
-      if (generatedRefreshToken == null)
-         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.SERVER_ERROR);
-
-      final OAuth2RefreshToken refreshToken = new OAuth2RefreshToken(
-           generatedRefreshToken.getTokenValue(),
-           generatedRefreshToken.getIssuedAt(),
-           generatedRefreshToken.getExpiresAt()
+      final OAuth2Authorization authorization = generateAuthorization(
+           registeredClient,
+           user,
+           grantType,
+           authorizedScopes,
+           accessToken,
+           refreshToken
       );
-      //}
-
-      // Persiste a autorização (em memória por agora)
-      final OAuth2Authorization authorization = OAuth2Authorization
-              .withRegisteredClient(registeredClient)
-              .principalName(user.getId().toString())
-              .authorizationGrantType(token.getGrantType())
-              .authorizedScopes(authorizedScopes)
-              .token(accessToken)
-              .refreshToken(refreshToken)
-              .attribute("user_id", user.getId().toString())
-              .attribute("cpf", user.getCpf())
-              .build();
 
       authorizationService.save(authorization);
 
@@ -145,16 +118,19 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
    private OAuth2ClientAuthenticationToken extractClientPrincipal(final Authentication authentication) throws OAuth2AuthenticationException {
       if (authentication.getPrincipal() instanceof OAuth2ClientAuthenticationToken authenticationToken)
          return authenticationToken;
-      else
-         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
+      else throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
+   }
+
+   private boolean unauthorizedGrant(final RegisteredClient registeredClient, final AuthorizationGrantType grantType) {
+      return registeredClient == null
+           || registeredClient.getAuthorizationGrantTypes() == null
+           || !registeredClient.getAuthorizationGrantTypes().contains(grantType);
    }
 
    private Set<String> resolveScopes(final User user,
                                      final RegisteredClient registeredClient,
                                      final Set<String> requestedScopes) {
-      final Set<String> userScopes = UserRole.ADMIN.equals(user.getUserRole())
-           ? Set.of("users.read", "users.write", "users.admin")
-           : Set.of("users.read", "users.write", "users.user");
+      final Set<String> userScopes = user.getUserRole().getScopes();
 
       if (CollectionUtils.isNotEmpty(requestedScopes)) {
          requestedScopes.addAll(userScopes);
@@ -165,5 +141,59 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
       }
 
       return userScopes;
+   }
+
+   private OAuth2Token generateToken(final RegisteredClient registeredClient,
+                                     final UsernamePasswordAuthenticationToken userPrincipal,
+                                     final Set<String> authorizedScopes,
+                                     final AuthorizationGrantType grantType,
+                                     final CustomPasswordGrantAuthenticationToken customPasswordGrantAuthenticationToken,
+                                     final boolean isRefresh) {
+      final DefaultOAuth2TokenContext accessTokenContext = DefaultOAuth2TokenContext.builder()
+           .registeredClient(registeredClient)
+           .principal(userPrincipal)
+           .authorizationServerContext(AuthorizationServerContextHolder.getContext())
+           .authorizedScopes(authorizedScopes)
+           .tokenType(isRefresh ? OAuth2TokenType.REFRESH_TOKEN : OAuth2TokenType.ACCESS_TOKEN)
+           .authorizationGrantType(grantType)
+           .authorizationGrant(customPasswordGrantAuthenticationToken)
+           .build();
+
+      final OAuth2Token generatedToken = tokenGenerator.generate(accessTokenContext);
+
+      if (generatedToken == null)
+         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.SERVER_ERROR);
+
+      if (isRefresh)
+         return new OAuth2RefreshToken(
+              generatedToken.getTokenValue(),
+              generatedToken.getIssuedAt(),
+              generatedToken.getExpiresAt());
+      else
+         return new OAuth2AccessToken(
+              OAuth2AccessToken.TokenType.BEARER,
+              generatedToken.getTokenValue(),
+              generatedToken.getIssuedAt(),
+              generatedToken.getExpiresAt(),
+              authorizedScopes);
+   }
+
+   private OAuth2Authorization generateAuthorization(final RegisteredClient registeredClient,
+                                                     final User user,
+                                                     final AuthorizationGrantType grantType,
+                                                     final Set<String> authorizedScopes,
+                                                     final OAuth2AccessToken accessToken,
+                                                     final OAuth2RefreshToken refreshToken) {
+
+      return OAuth2Authorization
+           .withRegisteredClient(registeredClient)
+           .principalName(user.getId().toString())
+           .authorizationGrantType(grantType)
+           .authorizedScopes(authorizedScopes)
+           .token(accessToken)
+           .refreshToken(refreshToken)
+           .attribute("user_id", user.getId().toString())
+           .attribute("cpf", user.getCpf())
+           .build();
    }
 }
