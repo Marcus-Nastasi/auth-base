@@ -41,33 +41,25 @@ public class ClientRegistrationController {
       final var clientId = UUID.randomUUID();
       final var clientSecret = UUID.randomUUID();
 
-      RegisteredClient.Builder clientBuilder = RegisteredClient.withId(UUID.randomUUID().toString())
+      final RegisteredClient.Builder clientBuilder = RegisteredClient.withId(UUID.randomUUID().toString())
            .clientId(clientId.toString())
            .clientSecret(passwordEncoderPort.encode(clientSecret.toString()))
            .clientName(request.clientName())
-           .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC);
+           .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+           .tokenSettings(TokenSettings.builder()
+                .accessTokenTimeToLive(Duration.ofMinutes(30))
+                .build());
 
       final var scopesSet = Arrays.stream(request.scopes().split(" ")).collect(Collectors.toSet());
 
       if (CollectionUtils.isNotEmpty(request.redirectUris())) {
-         clientBuilder
-              .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-              .scopes(scopes -> scopes.addAll(scopesSet))
-              .tokenSettings(TokenSettings.builder()
-                   .accessTokenTimeToLive(Duration.ofMinutes(30))
-                   .build());
-
-         resolveGrantTypes(request.grantTypes()).forEach(clientBuilder::authorizationGrantType);
-
          request.redirectUris().forEach(clientBuilder::redirectUri);
+         clientBuilder.scopes(scopes -> scopes.addAll(scopesSet));
+         resolveGrantTypes(request.grantTypes()).forEach(clientBuilder::authorizationGrantType);
       } else {
          clientBuilder
-              .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
               .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-              .scopes(scopes -> scopes.addAll(scopesSet))
-              .tokenSettings(TokenSettings.builder()
-                   .accessTokenTimeToLive(Duration.ofMinutes(30))
-                   .build());
+              .scopes(scopes -> scopes.addAll(scopesSet));
       }
 
       final var client = clientBuilder.build();
