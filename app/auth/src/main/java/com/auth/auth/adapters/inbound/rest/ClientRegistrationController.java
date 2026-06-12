@@ -12,6 +12,7 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
+import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -62,6 +63,18 @@ public class ClientRegistrationController {
               .scopes(scopes -> scopes.addAll(scopesSet));
       }
 
+      clientBuilder.tokenSettings(TokenSettings.builder()
+           .accessTokenTimeToLive(Duration.ofMinutes(30))
+           .refreshTokenTimeToLive(Duration.ofDays(10))
+           .build());
+
+      final var hasAuthorizationCode = request.grantTypes().contains("authorization_code");
+
+      clientBuilder.clientSettings(ClientSettings.builder()
+           .requireProofKey(hasAuthorizationCode)
+           .requireAuthorizationConsent(hasAuthorizationCode)
+           .build());
+
       final var client = clientBuilder.build();
 
       registeredClientRepository.save(client);
@@ -69,22 +82,20 @@ public class ClientRegistrationController {
       return ResponseEntity.status(HttpStatus.CREATED).body(ClientRegistrationDtoMapper.INSTANCE.response(client, clientSecret));
    }
 
-   private Set<AuthorizationGrantType> resolveGrantTypes(final List<String> stringsGrantType) {
+   private Set<AuthorizationGrantType> resolveGrantTypes(final List<String> stringsGrantType) throws ForbiddenException {
       if (CollectionUtils.isEmpty(stringsGrantType)) return Collections.emptySet();
-      return stringsGrantType.stream()
-           .filter(Objects::nonNull)
-           .map(s ->
-              switch (s) {
-                 case "authorization_code" -> AuthorizationGrantType.AUTHORIZATION_CODE;
-                 case "client_credentials" -> AuthorizationGrantType.CLIENT_CREDENTIALS;
-                 case "refresh_token" -> AuthorizationGrantType.REFRESH_TOKEN;
-                 case "urn:ietf:params:oauth:grant-type:jwt-bearer" -> AuthorizationGrantType.JWT_BEARER;
-                 case "urn:ietf:params:oauth:grant-type:device_code" -> AuthorizationGrantType.DEVICE_CODE;
-                 case "urn:ietf:params:oauth:grant-type:token-exchange" -> AuthorizationGrantType.TOKEN_EXCHANGE;
-                 case "urn:custom:grant-type:password" -> new AuthorizationGrantType("urn:custom:grant-type:password");
-                 default -> throw new ForbiddenException("Invalid grant type: "+s);
-              }
-           )
-           .collect(Collectors.toSet());
+      return stringsGrantType.stream().filter(Objects::nonNull).map(s ->
+           switch (s) {
+              case "authorization_code" -> AuthorizationGrantType.AUTHORIZATION_CODE;
+              case "client_credentials" -> AuthorizationGrantType.CLIENT_CREDENTIALS;
+              case "refresh_token" -> AuthorizationGrantType.REFRESH_TOKEN;
+              case "urn:ietf:params:oauth:grant-type:jwt-bearer" -> AuthorizationGrantType.JWT_BEARER;
+              case "urn:ietf:params:oauth:grant-type:device_code" -> AuthorizationGrantType.DEVICE_CODE;
+              case "urn:ietf:params:oauth:grant-type:token-exchange" -> AuthorizationGrantType.TOKEN_EXCHANGE;
+              case "urn:custom:grant-type:password" -> new AuthorizationGrantType("urn:custom:grant-type:password");
+              default -> throw new ForbiddenException("Invalid grant type: "+s);
+           }
+        )
+        .collect(Collectors.toSet());
    }
 }
