@@ -34,11 +34,8 @@ public class UserUseCase implements UserUseCasePort {
     private static final String LOG_CODE = "USER-USE-CASE";
 
     private final FindUserPort findUserPort;
-
     private final SaveUserPort saveUserPort;
-
     private final PasswordEncoderPort passwordEncoderPort;
-
     private final ConfirmationEmailSenderPort confirmationEmailSenderPort;
 
     public UserUseCase(final FindUserPort findUserPort,
@@ -108,7 +105,6 @@ public class UserUseCase implements UserUseCasePort {
     @Transactional(readOnly = true)
     public User findByEmail(final String email) throws NotFoundException {
         Logger.info(LOG_CODE, format("Searching user by email: %s", email));
-
         return findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
     }
 

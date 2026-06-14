@@ -4,6 +4,7 @@ import com.auth.auth.adapters.inbound.input.ClientRegistrationRequest;
 import com.auth.auth.adapters.inbound.mappers.ClientRegistrationDtoMapper;
 import com.auth.core.exceptions.ForbiddenException;
 import com.auth.core.ports.inbound.auth.PasswordEncoderPort;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,10 +15,7 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 import java.util.*;
@@ -46,21 +44,21 @@ public class ClientRegistrationController {
            .clientId(clientId.toString())
            .clientSecret(passwordEncoderPort.encode(clientSecret.toString()))
            .clientName(request.clientName())
-           .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+           //.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
            .tokenSettings(TokenSettings.builder()
                 .accessTokenTimeToLive(Duration.ofMinutes(30))
                 .build());
 
       final var scopesSet = Arrays.stream(request.scopes().split(" ")).collect(Collectors.toSet());
 
+      clientBuilder.scopes(scopes -> scopes.addAll(scopesSet));
+      resolveGrantTypes(request.grantTypes()).forEach(clientBuilder::authorizationGrantType);
+
       if (CollectionUtils.isNotEmpty(request.redirectUris())) {
+         clientBuilder.clientAuthenticationMethod(ClientAuthenticationMethod.NONE);
          request.redirectUris().forEach(clientBuilder::redirectUri);
-         clientBuilder.scopes(scopes -> scopes.addAll(scopesSet));
-         resolveGrantTypes(request.grantTypes()).forEach(clientBuilder::authorizationGrantType);
       } else {
-         clientBuilder
-              .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-              .scopes(scopes -> scopes.addAll(scopesSet));
+         clientBuilder.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC);
       }
 
       clientBuilder.tokenSettings(TokenSettings.builder()
@@ -80,6 +78,11 @@ public class ClientRegistrationController {
       registeredClientRepository.save(client);
 
       return ResponseEntity.status(HttpStatus.CREATED).body(ClientRegistrationDtoMapper.INSTANCE.response(client, clientSecret));
+   }
+
+   @GetMapping(value = "/fallback")
+   private ResponseEntity<Object> errorFallback(HttpServletRequest request, @RequestHeader Map<String, Object> headers) {
+      return ResponseEntity.ok(Map.of("request", request, "headers", headers));
    }
 
    private Set<AuthorizationGrantType> resolveGrantTypes(final List<String> stringsGrantType) throws ForbiddenException {

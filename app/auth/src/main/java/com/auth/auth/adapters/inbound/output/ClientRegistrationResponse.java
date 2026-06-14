@@ -15,5 +15,7 @@ public record ClientRegistrationResponse(
         @JsonProperty("grant_types")
         Set<String> grantTypes,
         @JsonProperty("scopes")
-        Set<String> scopes
+        Set<String> scopes,
+        @JsonProperty("redirect_uris")
+        Set<String> redirectUris
 ) implements Serializable {}

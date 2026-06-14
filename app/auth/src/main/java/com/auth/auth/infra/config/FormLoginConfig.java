@@ -15,14 +15,15 @@ public class FormLoginConfig {
    public SecurityFilterChain defaultSecurityFilterChain(final HttpSecurity http) {
       http
         .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login").permitAll()  // ← login é público
+                .requestMatchers("/login").permitAll()
                 .anyRequest().authenticated())
-        .formLogin(form -> form
-                .loginPage("/login")                    // ← customiza página de login
-                .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/oauth2/authorize")  // ← redireciona para authorize após sucesso
-                .permitAll())
-        .csrf(Customizer.withDefaults());               // ← mantém CSRF
+        .formLogin(Customizer.withDefaults())
+//        .formLogin(form -> form
+//                .loginPage("/login")
+//                .loginProcessingUrl("/login")
+//                .defaultSuccessUrl("/oauth2/authorize")  // ← redireciona para authorize após sucesso
+//                .permitAll())
+        .csrf(Customizer.withDefaults());
 
       return http.build();
    }

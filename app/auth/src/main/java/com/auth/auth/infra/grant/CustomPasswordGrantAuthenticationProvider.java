@@ -47,7 +47,7 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
    }
 
    @Override
-   @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED, timeout = 10, rollbackFor = Exception.class)
+   @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED, timeout = 20, rollbackFor = Exception.class)
    public Authentication authenticate(@NonNull final Authentication authentication) throws AuthenticationException {
       final CustomPasswordGrantAuthenticationToken customPasswordGrantAuthenticationToken =
               CustomPasswordGrantAuthenticationToken.class.cast(authentication);

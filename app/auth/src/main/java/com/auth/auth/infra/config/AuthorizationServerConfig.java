@@ -10,9 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.core.OAuth2Token;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -20,12 +18,11 @@ import org.springframework.security.oauth2.server.authorization.OAuth2Authorizat
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
 @Configuration
-@EnableWebSecurity
-@EnableMethodSecurity
 public class AuthorizationServerConfig {
 
    private final FindUserPort findUserPort;
@@ -54,7 +51,6 @@ public class AuthorizationServerConfig {
    @Order(1)
    public SecurityFilterChain authorizationServerSecurityFilterChain(final HttpSecurity http) {
       final var authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
-
       final var converter = new CustomPasswordGrantAuthenticationConverter();
       final var provider = new CustomPasswordGrantAuthenticationProvider(
            findUserPort, passwordEncoderPort, authorizationService, tokenGenerator
@@ -64,20 +60,24 @@ public class AuthorizationServerConfig {
            .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
            .with(
                authorizationServerConfigurer,
-               configurer -> configurer
+               configure -> configure
                     .authorizationServerSettings(AuthorizationServerSettings.builder().issuer(issuer).build())
                     .tokenEndpoint(endpoint -> endpoint.authenticationProvider(provider).accessTokenRequestConverter(converter))
                     .oidc(oidcConfigurer -> oidcConfigurer.clientRegistrationEndpoint(Customizer.withDefaults()))
            );
 
+      final var handler = new AccessDeniedHandlerImpl();
+      handler.setErrorPage("/api/v1/clients/error/fallback");
+
       http.exceptionHandling(ex ->
            ex.defaultAuthenticationEntryPointFor(
-                new LoginUrlAuthenticationEntryPoint("/oauth2/token"),
+                new LoginUrlAuthenticationEntryPoint("/login"),
                 new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
-           )
+           ).accessDeniedHandler(handler)
       );
 
       http.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(jwtDecoder)));
+      http.authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated());
 
       return http.build();
    }

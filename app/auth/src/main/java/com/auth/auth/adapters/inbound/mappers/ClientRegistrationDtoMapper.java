@@ -25,6 +25,7 @@ public interface ClientRegistrationDtoMapper {
    @Mapping(target = "clientSecret", source = "clientSecret")
    @Mapping(target = "grantTypes", source = "client.authorizationGrantTypes", qualifiedByName = "getGrantTypes")
    @Mapping(target = "scopes", source = "client.scopes")
+   @Mapping(target = "redirectUris", source = "client.redirectUris")
    ClientRegistrationResponse response(final RegisteredClient client, final UUID clientSecret);
 
    @Named(value = "getGrantTypes")
