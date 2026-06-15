@@ -26,7 +26,6 @@ public class RegisteredClientConfig {
       final JdbcRegisteredClientRepository repository =
               new JdbcRegisteredClientRepository(new JdbcTemplate(dataSource));
 
-      // Só cadastra se ainda não existir — idempotente
       registerIfAbsent(repository, passwordEncoder, buildAdminClient(passwordEncoder));
       registerIfAbsent(repository, passwordEncoder, buildWebClient(passwordEncoder));
       registerIfAbsent(repository, passwordEncoder, buildServiceClient(passwordEncoder));
@@ -48,8 +47,8 @@ public class RegisteredClientConfig {
            .clientName("Admin Client")
            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
            .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-           .scope("client.create")   // ← permite registrar novos clients
-           .scope("client.read")     // ← permite consultar clients
+           .scope("client.create")
+           .scope("client.read")
            .tokenSettings(TokenSettings.builder()
                 .accessTokenTimeToLive(Duration.ofMinutes(5))
                 .build())

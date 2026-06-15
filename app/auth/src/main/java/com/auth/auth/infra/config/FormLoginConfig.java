@@ -18,6 +18,7 @@ public class FormLoginConfig {
                 .requestMatchers("/login").permitAll()
                 .anyRequest().authenticated())
         .formLogin(Customizer.withDefaults())
+        //.logout(Customizer.withDefaults())
 //        .formLogin(form -> form
 //                .loginPage("/login")
 //                .loginProcessingUrl("/login")

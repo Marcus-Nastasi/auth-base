@@ -64,7 +64,10 @@ public class AuthorizationServerConfig {
                     .authorizationServerSettings(AuthorizationServerSettings.builder().issuer(issuer).build())
                     .tokenEndpoint(endpoint -> endpoint.authenticationProvider(provider).accessTokenRequestConverter(converter))
                     .oidc(oidcConfigurer -> oidcConfigurer.clientRegistrationEndpoint(Customizer.withDefaults()))
-           );
+           )
+           .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(jwtDecoder)))
+           .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
+           .logout(Customizer.withDefaults());
 
       final var handler = new AccessDeniedHandlerImpl();
       handler.setErrorPage("/api/v1/clients/error/fallback");
@@ -75,9 +78,6 @@ public class AuthorizationServerConfig {
                 new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
            ).accessDeniedHandler(handler)
       );
-
-      http.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(jwtDecoder)));
-      http.authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated());
 
       return http.build();
    }

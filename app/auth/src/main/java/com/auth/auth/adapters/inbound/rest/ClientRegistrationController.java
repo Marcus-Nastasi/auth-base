@@ -44,7 +44,6 @@ public class ClientRegistrationController {
            .clientId(clientId.toString())
            .clientSecret(passwordEncoderPort.encode(clientSecret.toString()))
            .clientName(request.clientName())
-           //.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
            .tokenSettings(TokenSettings.builder()
                 .accessTokenTimeToLive(Duration.ofMinutes(30))
                 .build());
