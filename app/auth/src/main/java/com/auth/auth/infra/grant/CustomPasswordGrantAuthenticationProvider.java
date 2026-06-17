@@ -1,8 +1,10 @@
 package com.auth.auth.infra.grant;
 
 import com.auth.core.domain.User;
+import com.auth.core.domain.enums.UserStatus;
 import com.auth.core.ports.inbound.auth.PasswordEncoderPort;
 import com.auth.core.ports.outbound.user.FindUserPort;
+import com.auth.core.shared.Logger;
 import lombok.NonNull;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -31,6 +33,8 @@ import java.util.stream.Collectors;
 
 public class CustomPasswordGrantAuthenticationProvider implements AuthenticationProvider {
 
+   private static final String LOG_CODE = "CUSTOM-PASSWORD-GRANT-AUTHENTICATION-PROVIDER";
+
    private final FindUserPort findUserPort;
    private final PasswordEncoderPort passwordEncoderPort;
    private final OAuth2AuthorizationService authorizationService;
@@ -49,8 +53,10 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
    @Override
    @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED, timeout = 20, rollbackFor = Exception.class)
    public Authentication authenticate(@NonNull final Authentication authentication) throws AuthenticationException {
+      Logger.info(LOG_CODE, "Initialize providing authentication: ", authentication);
+
       final CustomPasswordGrantAuthenticationToken customPasswordGrantAuthenticationToken =
-              CustomPasswordGrantAuthenticationToken.class.cast(authentication);
+              (CustomPasswordGrantAuthenticationToken) authentication;
       final AuthorizationGrantType grantType = customPasswordGrantAuthenticationToken.getGrantType();
 
       SecurityContextHolder.getContext().setAuthentication(customPasswordGrantAuthenticationToken);
@@ -62,9 +68,8 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
          throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
 
       final User user = findUserPort.findUserByCpf(customPasswordGrantAuthenticationToken.getCpf())
-              .orElseThrow(() -> new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED));
-      if (user.getInactivatedAt() != null)
-         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);
+           .filter(u -> UserStatus.ACTIVE.equals(u.getStatus()))
+           .orElseThrow(() -> new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED));
 
       if (!passwordEncoderPort.matches(customPasswordGrantAuthenticationToken.getPassword(), user.getPassword()))
          throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);
@@ -77,23 +82,23 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
            authorizedScopes.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toSet())
       );
 
-      final OAuth2AccessToken accessToken = OAuth2AccessToken.class.cast(generateToken(
+      final OAuth2AccessToken accessToken = (OAuth2AccessToken) generateToken(
            registeredClient,
            userPrincipal,
            authorizedScopes,
            grantType,
            customPasswordGrantAuthenticationToken,
            false
-      ));
+      );
 
-      final OAuth2RefreshToken refreshToken = OAuth2RefreshToken.class.cast(generateToken(
+      final OAuth2RefreshToken refreshToken = (OAuth2RefreshToken) generateToken(
            registeredClient,
            userPrincipal,
            authorizedScopes,
            grantType,
            customPasswordGrantAuthenticationToken,
            true
-      ));
+      );
 
       final OAuth2Authorization authorization = generateAuthorization(
            registeredClient,
@@ -116,6 +121,13 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
    }
 
    private OAuth2ClientAuthenticationToken extractClientPrincipal(final Authentication authentication) throws OAuth2AuthenticationException {
+//      try {
+//         return (OAuth2ClientAuthenticationToken) authentication.getPrincipal();
+//      } catch (final ClassCastException e) {
+//         Logger.error(LOG_CODE, e.getMessage(), null, e);
+//         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
+//      }
+//
       if (authentication.getPrincipal() instanceof OAuth2ClientAuthenticationToken authenticationToken)
          return authenticationToken;
       else throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);

@@ -18,7 +18,6 @@ import org.springframework.security.oauth2.server.authorization.OAuth2Authorizat
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
@@ -56,8 +55,7 @@ public class AuthorizationServerConfig {
            findUserPort, passwordEncoderPort, authorizationService, tokenGenerator
       );
 
-      http
-           .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
+      http.securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
            .with(
                authorizationServerConfigurer,
                configure -> configure
@@ -67,17 +65,13 @@ public class AuthorizationServerConfig {
            )
            .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(jwtDecoder)))
            .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
-           .logout(Customizer.withDefaults());
-
-      final var handler = new AccessDeniedHandlerImpl();
-      handler.setErrorPage("/api/v1/clients/error/fallback");
-
-      http.exceptionHandling(ex ->
-           ex.defaultAuthenticationEntryPointFor(
-                new LoginUrlAuthenticationEntryPoint("/login"),
-                new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
-           ).accessDeniedHandler(handler)
-      );
+           .logout(Customizer.withDefaults())
+           .exceptionHandling(ex ->
+              ex.defaultAuthenticationEntryPointFor(
+                   new LoginUrlAuthenticationEntryPoint("/login"),
+                   new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
+              )
+           );
 
       return http.build();
    }
