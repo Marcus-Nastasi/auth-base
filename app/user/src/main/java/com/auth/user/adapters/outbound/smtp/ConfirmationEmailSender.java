@@ -1,23 +1,21 @@
 package com.auth.user.adapters.outbound.smtp;
 
 import com.auth.core.domain.User;
-import com.auth.core.exceptions.ForbiddenException;
-import com.auth.core.ports.inbound.auth.TokenPort;
+import com.auth.core.exceptions.InternalException;
+import com.auth.core.ports.inbound.auth.EmailConfirmationTokenPort;
 import com.auth.core.ports.outbound.auth.ConfirmationEmailSenderPort;
 import com.auth.core.shared.Constants;
 import com.auth.core.shared.Logger;
 import jakarta.mail.*;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Optional;
 import java.util.Properties;
-
-import static java.util.Optional.ofNullable;
 
 @Service
 @ConditionalOnProperty(value = "spring.mail.enable", havingValue = "true")
@@ -26,35 +24,31 @@ public class ConfirmationEmailSender implements ConfirmationEmailSenderPort {
     private static final String LOG_CODE = "CONFIRMATION-EMAIL-SENDER";
 
     private final String host;
-
     private final String port;
-
     private final String username;
-
     private final String password;
-
     private final String team;
+    private final EmailConfirmationTokenPort emailConfirmationTokenPort;
 
-    private final TokenPort tokenPort;
-
-    public ConfirmationEmailSender(final TokenPort tokenPort,
-                                   @Value("${spring.mail.host}") final String host,
+    public ConfirmationEmailSender(@Value("${spring.mail.host}") final String host,
                                    @Value("${spring.mail.port}") final String port,
                                    @Value("${spring.mail.username}") final String username,
                                    @Value("${spring.mail.password}") final String password,
-                                   @Value("${spring.mail.team}") final String team) {
+                                   @Value("${spring.mail.team}") final String team,
+                                   @Qualifier("emailConfirmationTokenPortImpl")
+                                    final EmailConfirmationTokenPort emailConfirmationTokenPort) {
         this.host     = host;
         this.port     = port;
         this.username = username;
         this.password = password;
         this.team     = team;
-        this.tokenPort = tokenPort;
+        this.emailConfirmationTokenPort = emailConfirmationTokenPort;
     }
 
     @Override
     public void send(final User data) {
         try {
-            final String token = ofNullable(tokenPort.generateEmailConfirmationToken(data)).orElseThrow(ForbiddenException::new);
+            final String token = emailConfirmationTokenPort.generate(data);
 
             final Properties props = setProperties();
             final Session session = createSession(props);
@@ -64,6 +58,9 @@ public class ConfirmationEmailSender implements ConfirmationEmailSenderPort {
             Transport.send(message);
         } catch (UnsupportedEncodingException | MessagingException e) {
             Logger.error(LOG_CODE, e.getMessage(), e);
+        } catch (Exception e) {
+            Logger.error(LOG_CODE, e.getMessage(), e);
+            throw new InternalException(e);
         }
     }
 
@@ -99,7 +96,7 @@ public class ConfirmationEmailSender implements ConfirmationEmailSenderPort {
     private String getMessage(String name, String token) {
         return String.format("""
             <h3>Olá %s, tudo bem?</h3>
-            <h4>Clique para confirmar seu e-mail: <a href="http://localhost:8080/api/v1/user/activate?token=%s">clique aqui</a></h4>
+            <h4>Clique para confirmar seu e-mail: <a href="http://localhost:8080/api/v1/users/activate?token=%s">clique aqui</a></h4>
         """, name, token);
     }
 }

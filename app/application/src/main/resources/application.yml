@@ -6,3 +6,9 @@ spring:
   cache:
     jcache:
       config: classpath:ehcache.xml
+
+logging:
+  level:
+    org:
+      springframework:
+        security: TRACE

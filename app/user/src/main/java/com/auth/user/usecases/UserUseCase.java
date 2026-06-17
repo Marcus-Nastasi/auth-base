@@ -15,7 +15,9 @@ import com.auth.core.ports.outbound.user.FindUserPort;
 import com.auth.core.ports.outbound.user.SaveUserPort;
 import com.auth.core.shared.Constants;
 import com.auth.core.shared.Errors;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,11 +34,8 @@ public class UserUseCase implements UserUseCasePort {
     private static final String LOG_CODE = "USER-USE-CASE";
 
     private final FindUserPort findUserPort;
-
     private final SaveUserPort saveUserPort;
-
     private final PasswordEncoderPort passwordEncoderPort;
-
     private final ConfirmationEmailSenderPort confirmationEmailSenderPort;
 
     public UserUseCase(final FindUserPort findUserPort,
@@ -51,6 +50,7 @@ public class UserUseCase implements UserUseCasePort {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "get_users")
     public PageResponse<User> findAll(int page,
                                       int size,
                                       final String email,
@@ -105,12 +105,12 @@ public class UserUseCase implements UserUseCasePort {
     @Transactional(readOnly = true)
     public User findByEmail(final String email) throws NotFoundException {
         Logger.info(LOG_CODE, format("Searching user by email: %s", email));
-
         return findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
     }
 
     @Override
     @Transactional(
+        isolation = Isolation.READ_COMMITTED,
         propagation = Propagation.NESTED,
         rollbackFor = {RuntimeException.class, Exception.class}
     )
@@ -133,7 +133,7 @@ public class UserUseCase implements UserUseCasePort {
     }
 
     @Override
-    @Transactional(rollbackFor = {RuntimeException.class, Exception.class})
+    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = {RuntimeException.class, Exception.class})
     public User activate(final String email, final UUID userId) throws NotFoundException, UnprocessableEntityException {
         Logger.info(LOG_CODE, format("Activating user: %s", email));
 
@@ -153,7 +153,7 @@ public class UserUseCase implements UserUseCasePort {
     }
 
     @Override
-    @Transactional(rollbackFor = {RuntimeException.class, Exception.class})
+    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = {RuntimeException.class, Exception.class})
     public User inactivate(final String email) throws NotFoundException {
         Logger.info(LOG_CODE, format("Inactivating user: %s", email));
 
@@ -169,6 +169,7 @@ public class UserUseCase implements UserUseCasePort {
     }
 
     @Override
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public void resendEmail(final String email) throws UnprocessableEntityException, NotFoundException {
         Logger.info(LOG_CODE, format("Resending email: %s", email));
 
@@ -187,7 +188,7 @@ public class UserUseCase implements UserUseCasePort {
         }, NotFoundException::new);
     }
 
-    @Transactional(rollbackFor = {RuntimeException.class, Exception.class})
+    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = {RuntimeException.class, Exception.class})
     private User create(final User user) throws UnprocessableEntityException {
         if (user == null) throw new UnprocessableEntityException(Errors.COULD_NOT_SAVE_USER);
 
@@ -214,7 +215,7 @@ public class UserUseCase implements UserUseCasePort {
         return newUser;
     }
 
-    @Transactional(rollbackFor = {NotFoundException.class, Exception.class})
+    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = {NotFoundException.class, Exception.class})
     private User update(final User user) throws InternalException {
         Logger.info(LOG_CODE, format("Updating user: %s", user.getEmail()), user);
 
