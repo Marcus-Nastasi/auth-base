@@ -55,8 +55,7 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
    public Authentication authenticate(@NonNull final Authentication authentication) throws AuthenticationException {
       Logger.info(LOG_CODE, "Initialize providing authentication: ", authentication);
 
-      final CustomPasswordGrantAuthenticationToken customPasswordGrantAuthenticationToken =
-              (CustomPasswordGrantAuthenticationToken) authentication;
+      final var customPasswordGrantAuthenticationToken = (CustomPasswordGrantAuthenticationToken) authentication;
       final AuthorizationGrantType grantType = customPasswordGrantAuthenticationToken.getGrantType();
 
       SecurityContextHolder.getContext().setAuthentication(customPasswordGrantAuthenticationToken);
@@ -121,13 +120,6 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
    }
 
    private OAuth2ClientAuthenticationToken extractClientPrincipal(final Authentication authentication) throws OAuth2AuthenticationException {
-//      try {
-//         return (OAuth2ClientAuthenticationToken) authentication.getPrincipal();
-//      } catch (final ClassCastException e) {
-//         Logger.error(LOG_CODE, e.getMessage(), null, e);
-//         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
-//      }
-//
       if (authentication.getPrincipal() instanceof OAuth2ClientAuthenticationToken authenticationToken)
          return authenticationToken;
       else throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);

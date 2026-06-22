@@ -2,7 +2,7 @@ package com.auth.user.adapters.outbound.smtp;
 
 import com.auth.core.domain.User;
 import com.auth.core.exceptions.InternalException;
-import com.auth.core.ports.inbound.auth.EmailConfirmationTokenPort;
+import com.auth.core.ports.outbound.auth.PersonalizedTokenPort;
 import com.auth.core.ports.outbound.auth.ConfirmationEmailSenderPort;
 import com.auth.core.shared.Constants;
 import com.auth.core.shared.Logger;
@@ -28,7 +28,7 @@ public class ConfirmationEmailSender implements ConfirmationEmailSenderPort {
     private final String username;
     private final String password;
     private final String team;
-    private final EmailConfirmationTokenPort emailConfirmationTokenPort;
+    private final PersonalizedTokenPort personalizedTokenPort;
 
     public ConfirmationEmailSender(@Value("${spring.mail.host}") final String host,
                                    @Value("${spring.mail.port}") final String port,
@@ -36,19 +36,19 @@ public class ConfirmationEmailSender implements ConfirmationEmailSenderPort {
                                    @Value("${spring.mail.password}") final String password,
                                    @Value("${spring.mail.team}") final String team,
                                    @Qualifier("emailConfirmationTokenPortImpl")
-                                    final EmailConfirmationTokenPort emailConfirmationTokenPort) {
+                                    final PersonalizedTokenPort personalizedTokenPort) {
         this.host     = host;
         this.port     = port;
         this.username = username;
         this.password = password;
         this.team     = team;
-        this.emailConfirmationTokenPort = emailConfirmationTokenPort;
+        this.personalizedTokenPort = personalizedTokenPort;
     }
 
     @Override
     public void send(final User data) {
         try {
-            final String token = emailConfirmationTokenPort.generate(data);
+            final String token = personalizedTokenPort.generate(data);
 
             final Properties props = setProperties();
             final Session session = createSession(props);

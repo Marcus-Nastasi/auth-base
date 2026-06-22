@@ -1,9 +1,9 @@
-package com.auth.core.ports.inbound.auth;
+package com.auth.core.ports.outbound.auth;
 
 import com.auth.core.domain.User;
 import com.auth.core.exceptions.ForbiddenException;
 
-public interface EmailConfirmationTokenPort {
+public interface PersonalizedTokenPort {
 
    String generate(final User user) throws Exception;
 

@@ -26,15 +26,14 @@ public class RegisteredClientConfig {
       final JdbcRegisteredClientRepository repository =
               new JdbcRegisteredClientRepository(new JdbcTemplate(dataSource));
 
-      registerIfAbsent(repository, passwordEncoder, buildAdminClient(passwordEncoder));
-      registerIfAbsent(repository, passwordEncoder, buildWebClient(passwordEncoder));
-      registerIfAbsent(repository, passwordEncoder, buildServiceClient(passwordEncoder));
+      registerIfAbsent(repository, buildAdminClient(passwordEncoder));
+      registerIfAbsent(repository, buildWebClient(passwordEncoder));
+      registerIfAbsent(repository, buildServiceClient(passwordEncoder));
 
       return repository;
    }
 
    private void registerIfAbsent(final JdbcRegisteredClientRepository repository,
-                                 final PasswordEncoder passwordEncoder,
                                  final RegisteredClient client) {
       if (repository.findByClientId(client.getClientId()) == null) repository.save(client);
    }

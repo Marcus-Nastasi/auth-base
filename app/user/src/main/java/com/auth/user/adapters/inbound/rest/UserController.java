@@ -5,7 +5,7 @@ import com.auth.core.domain.User;
 import com.auth.core.domain.enums.UserRole;
 import com.auth.core.domain.enums.UserStatus;
 import com.auth.core.exceptions.ForbiddenException;
-import com.auth.core.ports.inbound.auth.EmailConfirmationTokenPort;
+import com.auth.core.ports.outbound.auth.PersonalizedTokenPort;
 import com.auth.core.ports.inbound.auth.HttpInterceptor;
 import com.auth.core.ports.inbound.user.UserUseCasePort;
 import com.auth.user.adapters.inbound.input.UserRequestDto;
@@ -41,18 +41,19 @@ public class UserController {
     private final UserUseCasePort useCase;
     private final HttpInterceptor idEqualsOrAdminInterceptor;
     private final JwtDecoder jwtDecoder;
-    private final EmailConfirmationTokenPort emailConfirmationTokenPort;
+    private final PersonalizedTokenPort emailConfirmationTokenPortImpl;
 
     @Autowired
     public UserController(final UserUseCasePort useCase,
                           @Qualifier("IdEqualsOrAdminInterceptor")
                           final HttpInterceptor idEqualsOrAdminInterceptor,
                           final JwtDecoder jwtDecoder,
-                          final EmailConfirmationTokenPort emailConfirmationTokenPort) {
+                          @Qualifier("emailConfirmationTokenPortImpl")
+                          final PersonalizedTokenPort emailConfirmationTokenPortImpl) {
         this.useCase = useCase;
         this.idEqualsOrAdminInterceptor = idEqualsOrAdminInterceptor;
         this.jwtDecoder = jwtDecoder;
-        this.emailConfirmationTokenPort = emailConfirmationTokenPort;
+        this.emailConfirmationTokenPortImpl = emailConfirmationTokenPortImpl;
     }
 
     @GetMapping(produces = APPLICATION_JSON_VALUE)
@@ -116,14 +117,13 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PreAuthorize("hasAuthorities('SCOPE_email.activate')")
     @GetMapping(value = "/activate", produces = TEXT_HTML_VALUE)
     public ResponseEntity<String> activate(@RequestParam("token") final String token) {
         try {
-            emailConfirmationTokenPort.validate(token);
+            emailConfirmationTokenPortImpl.validate(token);
 
             final Jwt d = jwtDecoder.decode(token);
-            final String email = String.valueOf(d.getClaim("email"));
+            final String email = d.getClaim("email");
             final UUID userId = UUID.fromString(d.getSubject());
 
             final User user = useCase.activate(email, userId);
