@@ -183,7 +183,6 @@ public class UserUseCase implements UserUseCasePort {
 
             Logger.info(LOG_CODE, "Sending confirmation e-mail");
             confirmationEmailSenderPort.send(u);
-
             Logger.info(LOG_CODE, "E-mail sent successfully");
         }, NotFoundException::new);
     }
