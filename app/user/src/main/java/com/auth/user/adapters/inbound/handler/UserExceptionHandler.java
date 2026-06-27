@@ -5,10 +5,7 @@ import com.auth.core.shared.AppError;
 import com.auth.user.adapters.inbound.exceptions.UnprocessableEntityException;
 import com.auth.user.adapters.inbound.output.SuperSetErrorResponseDto;
 import com.auth.user.adapters.inbound.rest.UserController;
-import jakarta.validation.ConstraintDeclarationException;
-import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.bcel.Const;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -54,11 +51,9 @@ public class UserExceptionHandler {
                 if ("value".equals(messageWordList.get(i + 1))) {
                     final String value = messageWordList.get(i + 2);
 
-                    if (value != null && value.contains(";")) {
+                    if (value != null && value.contains(";"))
                         attempted = value.replaceAll(";", "");
-                    } else {
-                        attempted = value;
-                    }
+                    else attempted = value;
                 }
             }
         }

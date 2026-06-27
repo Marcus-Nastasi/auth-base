@@ -43,7 +43,6 @@ public class EmailConfirmationTokenPortImpl implements PersonalizedTokenPort {
    public String generate(final User user) throws ForbiddenException {
       try {
          final Instant now = Instant.now(Constants.CLOCK);
-         final Instant expiry = now.plus(20, ChronoUnit.MINUTES);
 
          final JWTClaimsSet claims = new JWTClaimsSet.Builder()
               .subject(user.getId().toString())
@@ -53,7 +52,7 @@ public class EmailConfirmationTokenPortImpl implements PersonalizedTokenPort {
               .claim("scope", "email.activate")
               .claim("typ", "email_confirmation")
               .issueTime(Date.from(now))
-              .expirationTime(Date.from(expiry))
+              .expirationTime(Date.from(now.plus(20, ChronoUnit.MINUTES)))
               .build();
 
          final JWSHeader header = new JWSHeader.Builder(JWSAlgorithm.RS256)
