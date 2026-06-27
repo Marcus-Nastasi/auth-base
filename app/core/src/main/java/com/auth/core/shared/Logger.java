@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -80,7 +79,7 @@ public final class Logger {
                 .message(message)
                 .payload(payload)
                 .exception(throwable != null ? Arrays.toString(throwable.getStackTrace()) : null)
-                .timestamp(LocalDateTime.now(Constants.CLOCK).toInstant(Constants.ZONE_OFFSET))
+                .timestamp(Instant.now(Constants.CLOCK))
                 .logId(UUID.randomUUID())
                 .build();
 
