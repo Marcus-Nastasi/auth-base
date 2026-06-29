@@ -31,14 +31,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
       final boolean isActive = user.getInactivatedAt() == null;
 
       return org.springframework.security.core.userdetails.User.builder()
-              .username(user.getId().toString())
-              .password(user.getPassword())
-              .authorities(authorities)
-              .accountExpired(false)
-              .accountLocked(!isActive)
-              .credentialsExpired(false)
-              .disabled(!isActive)
-              .build();
+           .username(user.getId().toString())
+           .password(user.getPassword())
+           .authorities(authorities)
+           .accountExpired(false)
+           .accountLocked(!isActive)
+           .credentialsExpired(false)
+           .disabled(!isActive)
+           .build();
    }
 
    private UsernameNotFoundException throwNotFound() {

@@ -94,6 +94,7 @@ public class EmailConfirmationTokenPortImpl implements PersonalizedTokenPort {
             throw new ForbiddenException("Invalid scope");
 
       } catch (Exception e) {
+         if (e instanceof ForbiddenException fe) throw fe;
          throw new ForbiddenException("Invalid token format", e);
       }
    }
