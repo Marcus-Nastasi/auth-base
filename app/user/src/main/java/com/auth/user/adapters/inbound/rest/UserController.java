@@ -91,7 +91,7 @@ public class UserController {
                 .page(result.page())
                 .size(result.size())
                 .nextPage(result.nextPage())
-                .nextPageLink(httpServletRequest.getRequestURL().toString() +"?"+ httpServletRequest.getQueryString())
+                .nextPageLink(httpServletRequest.getRequestURL().toString()+"?page="+(page+1)+"&size="+size)
                 .data(result.data().stream()
                     .map(UserResponseMapper.INSTANCE::toUserByIdResponse)
                     .collect(Collectors.toSet()))
