@@ -1,8 +1,12 @@
 package com.auth.auth.infra.impl;
 
+import com.auth.auth.infra.util.PemUtils;
 import com.auth.core.domain.User;
 import com.auth.core.exceptions.ForbiddenException;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -12,14 +16,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.Date;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 final class EmailConfirmationTokenPortImplTests {
-   private static final String PRIVATE_KEY_PATH = "src/test/resources/keys/private.pem";
-   private static final String PUBLIC_KEY_PATH = "src/test/resources/keys/public.pem";
+   private static final String PRIVATE_KEY_PATH = "src/test/resources/keys/private-test.pem";
+   private static final String PUBLIC_KEY_PATH = "src/test/resources/keys/public-test.pem";
    private static final String KID = "test-kid";
    private static final String ISSUER = "http://localhost:8080";
 
@@ -38,7 +43,6 @@ final class EmailConfirmationTokenPortImplTests {
    // -------------------------------------------------------------------------
    // Helpers
    // -------------------------------------------------------------------------
-
    private User buildUser() {
       final User user = new User();
       user.setId(UUID.fromString("11111111-1111-1111-1111-111111111111"));
@@ -50,7 +54,6 @@ final class EmailConfirmationTokenPortImplTests {
    // =========================================================================
    // generate()
    // =========================================================================
-
    @Nested
    @DisplayName("generate()")
    class Generate {
@@ -140,7 +143,6 @@ final class EmailConfirmationTokenPortImplTests {
    // =========================================================================
    // validate()
    // =========================================================================
-
    @Nested
    @DisplayName("validate()")
    class Validate {
@@ -168,15 +170,15 @@ final class EmailConfirmationTokenPortImplTests {
          final User user = buildUser();
          // monta manualmente um token com typ errado
          final Instant now = Instant.now();
-         final var claims = new com.nimbusds.jwt.JWTClaimsSet.Builder()
+         final var claims = new JWTClaimsSet.Builder()
               .subject(user.getId().toString())
               .issuer(ISSUER)
               .claim("email", user.getEmail())
               .claim("cpf", user.getCpf())
               .claim("scope", "email.activate")
               .claim("typ", "wrong_type")
-              .issueTime(java.util.Date.from(now))
-              .expirationTime(java.util.Date.from(now.plusSeconds(1200)))
+              .issueTime(Date.from(now))
+              .expirationTime(Date.from(now.plusSeconds(1200)))
               .build();
 
          final String token = buildSignedToken(claims);
@@ -190,15 +192,15 @@ final class EmailConfirmationTokenPortImplTests {
       void shouldThrowForInvalidScope() throws Exception {
          final User user = buildUser();
          final Instant now = Instant.now();
-         final var claims = new com.nimbusds.jwt.JWTClaimsSet.Builder()
+         final var claims = new JWTClaimsSet.Builder()
               .subject(user.getId().toString())
               .issuer(ISSUER)
               .claim("email", user.getEmail())
               .claim("cpf", user.getCpf())
               .claim("scope", "wrong.scope")
               .claim("typ", "email_confirmation")
-              .issueTime(java.util.Date.from(now))
-              .expirationTime(java.util.Date.from(now.plusSeconds(1200)))
+              .issueTime(Date.from(now))
+              .expirationTime(Date.from(now.plusSeconds(1200)))
               .build();
 
          final String token = buildSignedToken(claims);
@@ -213,7 +215,7 @@ final class EmailConfirmationTokenPortImplTests {
          final User user = buildUser();
          // token que expirou 1 segundo atrás
          final Instant now = Instant.now();
-         final var claims = new com.nimbusds.jwt.JWTClaimsSet.Builder()
+         final var claims = new JWTClaimsSet.Builder()
               .subject(user.getId().toString())
               .issuer(ISSUER)
               .claim("email", user.getEmail())
@@ -245,13 +247,13 @@ final class EmailConfirmationTokenPortImplTests {
       // ---------------------------------------------------------------------
       // Helper: assina um JWTClaimsSet com a chave privada de teste
       // ---------------------------------------------------------------------
-      private String buildSignedToken(final com.nimbusds.jwt.JWTClaimsSet claims) throws Exception {
-         final var privateKey = com.auth.auth.infra.util.PemUtils.readPrivateKey(PRIVATE_KEY_PATH);
-         final var header = new com.nimbusds.jose.JWSHeader.Builder(com.nimbusds.jose.JWSAlgorithm.RS256)
+      private String buildSignedToken(final JWTClaimsSet claims) throws Exception {
+         final var privateKey = PemUtils.readPrivateKey(PRIVATE_KEY_PATH);
+         final var header = new JWSHeader.Builder(com.nimbusds.jose.JWSAlgorithm.RS256)
               .keyID(KID)
               .build();
          final var jwt = new SignedJWT(header, claims);
-         jwt.sign(new com.nimbusds.jose.crypto.RSASSASigner(privateKey));
+         jwt.sign(new RSASSASigner(privateKey));
          return jwt.serialize();
       }
    }
