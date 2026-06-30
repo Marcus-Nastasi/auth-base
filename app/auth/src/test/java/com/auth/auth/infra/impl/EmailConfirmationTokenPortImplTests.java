@@ -241,31 +241,6 @@ final class EmailConfirmationTokenPortImplTests {
       void shouldThrowForBlankToken() {
          assertThatThrownBy(() -> sut.validate("")).isInstanceOf(ForbiddenException.class);
       }
-//
-//      @Test
-//      @DisplayName("Clock mockado: token válido no instante fixo não deve lançar exceção")
-//      void shouldValidateWithFixedClock() throws Exception {
-//         final Instant fixedNow = Instant.parse("2026-01-01T12:00:00Z");
-//         final Clock fixedClock = Clock.fixed(fixedNow, ZoneId.of("America/Sao_Paulo"));
-//
-//         try (MockedStatic<Constants> mockedConstants = mockStatic(Constants.class)) {
-//            mockedConstants.when(() -> Constants.CLOCK).thenReturn(fixedClock);
-//
-//            final var claims = new com.nimbusds.jwt.JWTClaimsSet.Builder()
-//                    .subject("user-id")
-//                    .issuer(ISSUER)
-//                    .claim("email", "a@b.com")
-//                    .claim("cpf", "00000000000")
-//                    .claim("scope", "email.activate")
-//                    .claim("typ", "email_confirmation")
-//                    .issueTime(java.util.Date.from(fixedNow))
-//                    .expirationTime(java.util.Date.from(fixedNow.plusSeconds(1200)))
-//                    .build();
-//
-//            final String token = buildSignedToken(claims);
-//            assertThatCode(() -> sut.validate(token)).doesNotThrowAnyException();
-//         }
-//      }
 
       // ---------------------------------------------------------------------
       // Helper: assina um JWTClaimsSet com a chave privada de teste
