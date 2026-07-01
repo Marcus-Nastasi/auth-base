@@ -86,9 +86,9 @@ public final class PemUtils {
 
     private static String extractBeginAndEnd(final byte[] file) {
         return new String(file)
-                .replaceAll("-----BEGIN (.*)-----", "")
-                .replaceAll("-----END (.*)-----", "")
-                .replaceAll("\\s", "");
+            .replaceAll("-----BEGIN (.*)-----", "")
+            .replaceAll("-----END (.*)-----", "")
+            .replaceAll("\\s", "");
     }
 
     private static RSAKey generateRSAKey(final byte[] bytes, final boolean isPrivate) throws InternalException {

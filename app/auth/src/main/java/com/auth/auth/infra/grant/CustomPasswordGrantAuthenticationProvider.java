@@ -51,7 +51,12 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
    }
 
    @Override
-   @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED, timeout = 20, rollbackFor = Exception.class)
+   @Transactional(
+        propagation = Propagation.REQUIRES_NEW,
+        isolation = Isolation.READ_COMMITTED,
+        timeout = 20,
+        rollbackFor = Exception.class
+   )
    public Authentication authenticate(@NonNull final Authentication authentication) throws AuthenticationException {
       Logger.info(LOG_CODE, "Initialize providing authentication: ", authentication);
 
@@ -139,8 +144,7 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
       if (CollectionUtils.isNotEmpty(requestedScopes)) {
          requestedScopes.addAll(userScopes);
          return requestedScopes.stream()
-              .filter(userScopes::contains)
-              .filter(s -> registeredClient.getScopes().contains(s))
+              .filter(s -> userScopes.contains(s) && registeredClient.getScopes().contains(s))
               .collect(Collectors.toSet());
       }
 
