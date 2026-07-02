@@ -26,7 +26,6 @@ final class ClientRegistrationControllerTests extends ControllerTestBase {
 
    @MockitoBean
    private RegisteredClientRepository registeredClientRepository;
-
    @MockitoBean
    private PasswordEncoderPort passwordEncoderPort;
 
@@ -50,7 +49,6 @@ final class ClientRegistrationControllerTests extends ControllerTestBase {
                 .content(objectMapper.writeValueAsString(clientRegistrationRequest)))
            .andExpect(status().isForbidden());
    }
-
 
    @Test
    @DisplayName("Should create client")

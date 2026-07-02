@@ -13,7 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
     },
     properties = "spring.cache.type=none"
 )
-@AutoConfigureMockMvc(addFilters = true)
+@AutoConfigureMockMvc
 abstract class ControllerTestBase {
 
     @Autowired

@@ -19,8 +19,8 @@
         </processorPath>
         <module name="core" />
         <module name="application" />
-        <module name="auth" />
         <module name="user" />
+        <module name="auth" />
       </profile>
     </annotationProcessing>
   </component>
