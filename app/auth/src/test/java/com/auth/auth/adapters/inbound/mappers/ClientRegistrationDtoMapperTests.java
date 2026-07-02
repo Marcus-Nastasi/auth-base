@@ -29,7 +29,6 @@ final class ClientRegistrationDtoMapperTests {
    // -------------------------------------------------------------------------
    // Helpers
    // -------------------------------------------------------------------------
-
    private RegisteredClient.Builder baseClientBuilder() {
       return RegisteredClient.withId(UUID.randomUUID().toString())
            .clientId("client-abc")
@@ -43,7 +42,6 @@ final class ClientRegistrationDtoMapperTests {
    // =========================================================================
    // response()
    // =========================================================================
-
    @Nested
    @DisplayName("response()")
    class Response {

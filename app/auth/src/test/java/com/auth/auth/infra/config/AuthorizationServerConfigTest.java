@@ -2,7 +2,6 @@ package com.auth.auth.infra.config;
 
 import com.auth.core.ports.inbound.auth.PasswordEncoderPort;
 import com.auth.core.ports.outbound.user.FindUserPort;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
@@ -14,7 +13,6 @@ import static org.mockito.Mockito.mock;
 final class AuthorizationServerConfigTest {
 
    @Test
-   @DisplayName("authorizationServerSecurityFilterChain deve ser criado sem lançar exceção")
    void shouldBuildFilterChainWithoutException() {
       final var findUserPort = mock(FindUserPort.class);
       final var passwordEncoderPort = mock(PasswordEncoderPort.class);
