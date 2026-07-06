@@ -1,6 +1,7 @@
 package com.auth.auth.infra.grant;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationGrantAuthenticationToken;
@@ -15,7 +16,9 @@ public class CustomPasswordGrantAuthenticationToken extends OAuth2AuthorizationG
 
    private final String cpf;
    private final String password;
-   private final Set<String> scopes;
+
+   @Setter
+   private Set<String> scopes;
 
    public CustomPasswordGrantAuthenticationToken(final String cpf,
                                                  final String password,

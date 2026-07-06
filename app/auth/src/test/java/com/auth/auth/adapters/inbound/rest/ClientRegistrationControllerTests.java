@@ -42,8 +42,18 @@ final class ClientRegistrationControllerTests extends ControllerTestBase {
    }
 
    @Test
-   @DisplayName("Should return 401")
+   @DisplayName("Should return 401 without scope")
    void shouldReturn401WhenUnauthenticated() throws Exception {
+      mockMvc.perform(post("/api/v1/clients")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(clientRegistrationRequest)))
+           .andExpect(status().isForbidden());
+   }
+
+   @Test
+   @DisplayName("Should return 401 with wrong scope")
+   @WithMockUser(authorities = {"SCOPE_users.read", "SCOPE_users.write", "SCOPE_client.read"})
+   void shouldReturn401WhenInvalidScope() throws Exception {
       mockMvc.perform(post("/api/v1/clients")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(clientRegistrationRequest)))

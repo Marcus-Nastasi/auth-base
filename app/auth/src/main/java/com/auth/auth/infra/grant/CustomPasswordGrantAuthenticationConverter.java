@@ -25,6 +25,8 @@ public class CustomPasswordGrantAuthenticationConverter implements Authenticatio
          return null; // não é o nosso grant — deixa outros converters tentarem
 
       final Authentication clientPrincipal = SecurityContextHolder.getContext().getAuthentication();
+      if (clientPrincipal == null)
+         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
 
       final var cpf = request.getParameter("cpf");
       final var password = request.getParameter("password");

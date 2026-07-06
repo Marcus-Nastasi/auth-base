@@ -39,7 +39,6 @@ final class TokenCustomizerTests {
       return context;
    }
 
-
    @Test
    @DisplayName("não faz nada para token que não é ACCESS_TOKEN")
    void shouldSkipNonAccessToken() {

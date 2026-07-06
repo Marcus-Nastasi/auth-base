@@ -87,7 +87,7 @@ public final class Logger {
         try {
             jsonLog = objectMapper.writeValueAsString(loggerJson);
         } catch (final JsonProcessingException e) {
-            log.error("Error processing JSON on Logger");
+            log.error("LOGGER: Error processing JSON on Logger: {}", e.getMessage());
             throw new RuntimeException(e.getMessage(), e);
         }
 

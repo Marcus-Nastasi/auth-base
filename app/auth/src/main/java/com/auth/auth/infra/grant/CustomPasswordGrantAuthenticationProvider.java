@@ -4,7 +4,6 @@ import com.auth.core.domain.User;
 import com.auth.core.domain.enums.UserStatus;
 import com.auth.core.ports.inbound.auth.PasswordEncoderPort;
 import com.auth.core.ports.outbound.user.FindUserPort;
-import com.auth.core.shared.Logger;
 import lombok.NonNull;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -28,6 +27,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -58,8 +58,6 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
         rollbackFor = Exception.class
    )
    public Authentication authenticate(@NonNull final Authentication authentication) throws AuthenticationException {
-      Logger.info(LOG_CODE, "Initialize providing authentication: ", authentication);
-
       final var customPasswordGrantAuthenticationToken = (CustomPasswordGrantAuthenticationToken) authentication;
       final AuthorizationGrantType grantType = customPasswordGrantAuthenticationToken.getGrantType();
 
@@ -138,11 +136,12 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
 
    private Set<String> resolveScopes(final User user,
                                      final RegisteredClient registeredClient,
-                                     final Set<String> requestedScopes) {
+                                     Set<String> requestedScopes) {
+      // making a mutable copy of the requested scopes
+      requestedScopes = new HashSet<>(Set.copyOf(requestedScopes));
       final Set<String> userScopes = user.getUserRole().getScopes();
 
       if (CollectionUtils.isNotEmpty(requestedScopes)) {
-         requestedScopes.addAll(userScopes);
          return requestedScopes.stream()
               .filter(s -> userScopes.contains(s) && registeredClient.getScopes().contains(s))
               .collect(Collectors.toSet());
