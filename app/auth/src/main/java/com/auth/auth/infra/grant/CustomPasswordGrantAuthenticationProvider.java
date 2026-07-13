@@ -66,8 +66,7 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
       final OAuth2ClientAuthenticationToken clientPrincipal = extractClientPrincipal(customPasswordGrantAuthenticationToken);
       final RegisteredClient registeredClient = clientPrincipal.getRegisteredClient();
 
-      if (unauthorizedGrant(registeredClient, grantType))
-         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
+      unauthorizedGrant(registeredClient, grantType);
 
       final User user = findUserPort.findUserByCpf(customPasswordGrantAuthenticationToken.getCpf())
            .filter(u -> UserStatus.ACTIVE.equals(u.getStatus()))
@@ -128,10 +127,13 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
       else throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
    }
 
-   private boolean unauthorizedGrant(final RegisteredClient registeredClient, final AuthorizationGrantType grantType) {
-      return registeredClient == null
+   private void unauthorizedGrant(final RegisteredClient registeredClient, final AuthorizationGrantType grantType) {
+      final boolean invalidGrant = registeredClient == null
            || registeredClient.getAuthorizationGrantTypes() == null
            || !registeredClient.getAuthorizationGrantTypes().contains(grantType);
+
+      if (invalidGrant)
+         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
    }
 
    private Set<String> resolveScopes(final User user,

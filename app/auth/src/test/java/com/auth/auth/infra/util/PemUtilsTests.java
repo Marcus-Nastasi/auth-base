@@ -1,6 +1,5 @@
 package com.auth.auth.infra.util;
 
-
 import com.auth.core.exceptions.InternalException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,7 +53,6 @@ final class PemUtilsTests {
     // -------------------------------------------------------------------------
     // readPrivateKey — happy path
     // -------------------------------------------------------------------------
-
     @Test
     void shouldReadPrivateKeySuccessfully() {
         final var result = assertDoesNotThrow(() -> PemUtils.readPrivateKey(privateKeyFile.toString()));
@@ -77,7 +75,6 @@ final class PemUtilsTests {
     // -------------------------------------------------------------------------
     // readPublicKey — happy path
     // -------------------------------------------------------------------------
-
     @Test
     void shouldReadPublicKeySuccessfully() {
         final var result = assertDoesNotThrow(() -> PemUtils.readPublicKey(publicKeyFile.toString()));
@@ -100,7 +97,6 @@ final class PemUtilsTests {
     // -------------------------------------------------------------------------
     // readPrivateKey — file not found
     // -------------------------------------------------------------------------
-
     @Test
     void shouldThrowInternalExceptionWhenPrivateKeyFileNotFound() {
         final var nonExistent = tempDir.resolve("ghost_private.pem").toString();
@@ -111,7 +107,6 @@ final class PemUtilsTests {
     // -------------------------------------------------------------------------
     // readPublicKey — file not found
     // -------------------------------------------------------------------------
-
     @Test
     void shouldThrowInternalExceptionWhenPublicKeyFileNotFound() {
         final var nonExistent = tempDir.resolve("ghost_public.pem").toString();
@@ -122,7 +117,6 @@ final class PemUtilsTests {
     // -------------------------------------------------------------------------
     // readPrivateKey — invalid path (null-byte triggers InvalidPathException)
     // -------------------------------------------------------------------------
-
     @Test
     void shouldThrowInternalExceptionWhenPrivateKeyPathIsInvalid() {
         final var result = assertThrows(InternalException.class, () -> PemUtils.readPrivateKey("\0invalid_path"));
@@ -132,7 +126,6 @@ final class PemUtilsTests {
     // -------------------------------------------------------------------------
     // readPublicKey — invalid path
     // -------------------------------------------------------------------------
-
     @Test
     void shouldThrowInternalExceptionWhenPublicKeyPathIsInvalid() {
         final var result = assertThrows(InternalException.class, () -> PemUtils.readPublicKey("\0invalid_path"));
@@ -142,7 +135,6 @@ final class PemUtilsTests {
     // -------------------------------------------------------------------------
     // readPrivateKey — malformed PEM content
     // -------------------------------------------------------------------------
-
     @Test
     void shouldThrowExceptionWhenPrivateKeyContentIsNotValidBase64() throws Exception {
         final Path corruptFile = tempDir.resolve("corrupt_private.pem");
@@ -170,7 +162,6 @@ final class PemUtilsTests {
     // -------------------------------------------------------------------------
     // readPublicKey — malformed PEM content
     // -------------------------------------------------------------------------
-
     @Test
     void shouldThrowExceptionWhenPublicKeyContentIsNotValidBase64() throws Exception {
         final Path corruptFile = tempDir.resolve("corrupt_public.pem");
@@ -198,7 +189,6 @@ final class PemUtilsTests {
     // -------------------------------------------------------------------------
     // Cross-key mismatch — public key file passed to readPrivateKey and vice versa
     // -------------------------------------------------------------------------
-
     @Test
     void shouldThrowExceptionWhenPublicKeyFileIsPassedToReadPrivateKey() {
         assertThrows(Exception.class, () -> PemUtils.readPrivateKey(publicKeyFile.toString()));
@@ -213,7 +203,6 @@ final class PemUtilsTests {
     // -------------------------------------------------------------------------
     // getFile — path == null (branch unreachable via public API; tested via reflection)
     // -------------------------------------------------------------------------
-
     @Test
     void shouldThrowInternalExceptionWhenPathIsNull() throws Exception {
         final Method getFile = PemUtils.class.getDeclaredMethod("getFile", Path.class);
@@ -229,7 +218,6 @@ final class PemUtilsTests {
     // -------------------------------------------------------------------------
     // getFile — catch (OutOfMemoryError) via MockedStatic<Files>
     // -------------------------------------------------------------------------
-
     @Test
     void shouldThrowInternalExceptionWhenOutOfMemoryErrorOccurs() {
         try (MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
@@ -247,7 +235,6 @@ final class PemUtilsTests {
     // -------------------------------------------------------------------------
     // getFile — catch (SecurityException) via MockedStatic<Files>
     // -------------------------------------------------------------------------
-
     @Test
     void shouldThrowInternalExceptionWhenSecurityExceptionOccurs() {
         try (MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {

@@ -22,7 +22,7 @@ public class CustomPasswordGrantAuthenticationConverter implements Authenticatio
    public Authentication convert(final HttpServletRequest request) {
       final var grantType = request.getParameter(OAuth2ParameterNames.GRANT_TYPE);
       if (!CustomPasswordGrantAuthenticationToken.GRANT_TYPE.getValue().equals(grantType))
-         return null; // não é o nosso grant — deixa outros converters tentarem
+         return null;
 
       final Authentication clientPrincipal = SecurityContextHolder.getContext().getAuthentication();
       if (clientPrincipal == null)

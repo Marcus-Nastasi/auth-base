@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 
 import java.util.Collections;
@@ -49,7 +50,9 @@ final class CustomPasswordGrantAuthenticationConverterTests {
    }
 
    @Test
-   void shouldThrowOAuth2AuthenticationException() {
+   void shouldThrowExceptionWhenNullAuth() {
+      SecurityContextHolder.getContext().setAuthentication(null);
+
       when(request.getParameter(OAuth2ParameterNames.GRANT_TYPE))
               .thenReturn(CustomPasswordGrantAuthenticationToken.GRANT_TYPE.getValue());
       when(request.getParameter("cpf")).thenReturn(null);
@@ -58,6 +61,37 @@ final class CustomPasswordGrantAuthenticationConverterTests {
       final var result = assertThrows(OAuth2AuthenticationException.class, () -> converter.convert(request));
 
       assertNotNull(result);
+      assertEquals(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT, result.getError().getErrorCode());
+   }
+
+   @Test
+   void shouldThrowExceptionWhenNullCredentials() {
+      SecurityContextHolder.getContext().setAuthentication(authentication);
+
+      when(request.getParameter(OAuth2ParameterNames.GRANT_TYPE))
+              .thenReturn(CustomPasswordGrantAuthenticationToken.GRANT_TYPE.getValue());
+      when(request.getParameter("cpf")).thenReturn(null);
+      when(request.getParameter("password")).thenReturn(null);
+
+      final var result = assertThrows(OAuth2AuthenticationException.class, () -> converter.convert(request));
+
+      assertNotNull(result);
+      assertEquals(OAuth2ErrorCodes.INVALID_REQUEST, result.getError().getErrorCode());
+   }
+
+   @Test
+   void shouldThrowExceptionWhenEmptyCredentials() {
+      SecurityContextHolder.getContext().setAuthentication(authentication);
+
+      when(request.getParameter(OAuth2ParameterNames.GRANT_TYPE))
+              .thenReturn(CustomPasswordGrantAuthenticationToken.GRANT_TYPE.getValue());
+      when(request.getParameter("cpf")).thenReturn("");
+      when(request.getParameter("password")).thenReturn("");
+
+      final var result = assertThrows(OAuth2AuthenticationException.class, () -> converter.convert(request));
+
+      assertNotNull(result);
+      assertEquals(OAuth2ErrorCodes.INVALID_REQUEST, result.getError().getErrorCode());
    }
 
    @Test
