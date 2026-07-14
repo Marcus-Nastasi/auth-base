@@ -76,7 +76,7 @@ public class ConfirmationEmailSender implements ConfirmationEmailSenderPort {
     private Session createSession(final Properties props) {
         return Session.getInstance(props, new Authenticator() {
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(username, password);
+            return new PasswordAuthentication(username, password);
             }
         });
     }
