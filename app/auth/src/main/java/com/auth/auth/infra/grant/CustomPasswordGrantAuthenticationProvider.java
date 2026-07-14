@@ -4,7 +4,6 @@ import com.auth.core.domain.User;
 import com.auth.core.domain.enums.UserStatus;
 import com.auth.core.ports.inbound.auth.PasswordEncoderPort;
 import com.auth.core.ports.outbound.user.FindUserPort;
-import com.auth.core.shared.Logger;
 import lombok.NonNull;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -28,6 +27,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -51,10 +51,13 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
    }
 
    @Override
-   @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED, timeout = 20, rollbackFor = Exception.class)
+   @Transactional(
+        propagation = Propagation.REQUIRES_NEW,
+        isolation = Isolation.READ_COMMITTED,
+        timeout = 20,
+        rollbackFor = Exception.class
+   )
    public Authentication authenticate(@NonNull final Authentication authentication) throws AuthenticationException {
-      Logger.info(LOG_CODE, "Initialize providing authentication: ", authentication);
-
       final var customPasswordGrantAuthenticationToken = (CustomPasswordGrantAuthenticationToken) authentication;
       final AuthorizationGrantType grantType = customPasswordGrantAuthenticationToken.getGrantType();
 
@@ -63,8 +66,7 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
       final OAuth2ClientAuthenticationToken clientPrincipal = extractClientPrincipal(customPasswordGrantAuthenticationToken);
       final RegisteredClient registeredClient = clientPrincipal.getRegisteredClient();
 
-      if (unauthorizedGrant(registeredClient, grantType))
-         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
+      unauthorizedGrant(registeredClient, grantType);
 
       final User user = findUserPort.findUserByCpf(customPasswordGrantAuthenticationToken.getCpf())
            .filter(u -> UserStatus.ACTIVE.equals(u.getStatus()))
@@ -125,22 +127,25 @@ public class CustomPasswordGrantAuthenticationProvider implements Authentication
       else throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
    }
 
-   private boolean unauthorizedGrant(final RegisteredClient registeredClient, final AuthorizationGrantType grantType) {
-      return registeredClient == null
+   private void unauthorizedGrant(final RegisteredClient registeredClient, final AuthorizationGrantType grantType) {
+      final boolean invalidGrant = registeredClient == null
            || registeredClient.getAuthorizationGrantTypes() == null
            || !registeredClient.getAuthorizationGrantTypes().contains(grantType);
+
+      if (invalidGrant)
+         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
    }
 
    private Set<String> resolveScopes(final User user,
                                      final RegisteredClient registeredClient,
-                                     final Set<String> requestedScopes) {
+                                     Set<String> requestedScopes) {
+      // making a mutable copy of the requested scopes
+      requestedScopes = new HashSet<>(Set.copyOf(requestedScopes));
       final Set<String> userScopes = user.getUserRole().getScopes();
 
       if (CollectionUtils.isNotEmpty(requestedScopes)) {
-         requestedScopes.addAll(userScopes);
          return requestedScopes.stream()
-              .filter(userScopes::contains)
-              .filter(s -> registeredClient.getScopes().contains(s))
+              .filter(s -> userScopes.contains(s) && registeredClient.getScopes().contains(s))
               .collect(Collectors.toSet());
       }
 

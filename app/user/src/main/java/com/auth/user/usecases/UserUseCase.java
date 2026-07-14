@@ -4,6 +4,7 @@ import com.auth.core.domain.PageResponse;
 import com.auth.core.domain.User;
 import com.auth.core.domain.enums.UserRole;
 import com.auth.core.domain.enums.UserStatus;
+import com.auth.core.exceptions.ForbiddenException;
 import com.auth.core.exceptions.InternalException;
 import com.auth.core.exceptions.NotFoundException;
 import com.auth.core.shared.Logger;
@@ -15,6 +16,7 @@ import com.auth.core.ports.outbound.user.FindUserPort;
 import com.auth.core.ports.outbound.user.SaveUserPort;
 import com.auth.core.shared.Constants;
 import com.auth.core.shared.Errors;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Isolation;
@@ -135,10 +137,17 @@ public class UserUseCase implements UserUseCasePort {
     @Override
     @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = {RuntimeException.class, Exception.class})
     public User activate(final String email, final UUID userId) throws NotFoundException, UnprocessableEntityException {
+        if (StringUtils.isBlank(email) || userId == null) {
+            Logger.error(LOG_CODE, "Email or userId cannot be null");
+            return null;
+        }
+
         Logger.info(LOG_CODE, format("Activating user: %s", email));
 
         final User user = findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
         Logger.info(LOG_CODE, "User found: ", user);
+
+        if (!userId.equals(user.getId())) throw new ForbiddenException();
 
         if (user.getStatus().getCode() == UserStatus.ACTIVE.getCode()) {
             Logger.info(LOG_CODE, "User is already active");

@@ -21,6 +21,8 @@ import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.apache.commons.collections.CollectionUtils.isNotEmpty;
+
 @RestController
 @RequestMapping("/api/v1/clients")
 public class ClientRegistrationController {
@@ -44,28 +46,21 @@ public class ClientRegistrationController {
            .clientId(clientId.toString())
            .clientSecret(passwordEncoderPort.encode(clientSecret.toString()))
            .clientName(request.clientName())
+           .scopes(scopes -> scopes.addAll(request.scopes()))
+           .authorizationGrantTypes(auth -> auth.addAll(resolveGrantTypes(request.grantTypes())))
            .tokenSettings(TokenSettings.builder()
-                .accessTokenTimeToLive(Duration.ofMinutes(30))
+                .accessTokenTimeToLive(Duration.ofMinutes(15))
+                .refreshTokenTimeToLive(Duration.ofDays(10))
                 .build());
 
-      final var scopesSet = Arrays.stream(request.scopes().split(" ")).collect(Collectors.toSet());
-
-      clientBuilder.scopes(scopes -> scopes.addAll(scopesSet));
-      resolveGrantTypes(request.grantTypes()).forEach(clientBuilder::authorizationGrantType);
-
-      if (CollectionUtils.isNotEmpty(request.redirectUris())) {
+      if (isNotEmpty(request.redirectUris())) {
          clientBuilder.clientAuthenticationMethod(ClientAuthenticationMethod.NONE);
          request.redirectUris().forEach(clientBuilder::redirectUri);
       } else {
          clientBuilder.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC);
       }
 
-      clientBuilder.tokenSettings(TokenSettings.builder()
-           .accessTokenTimeToLive(Duration.ofMinutes(30))
-           .refreshTokenTimeToLive(Duration.ofDays(10))
-           .build());
-
-      final var hasAuthorizationCode = request.grantTypes().contains("authorization_code");
+      final var hasAuthorizationCode = isNotEmpty(request.grantTypes()) && request.grantTypes().contains("authorization_code");
 
       clientBuilder.clientSettings(ClientSettings.builder()
            .requireProofKey(hasAuthorizationCode)
@@ -84,7 +79,7 @@ public class ClientRegistrationController {
       return ResponseEntity.ok(Map.of("request", request, "headers", headers));
    }
 
-   private Set<AuthorizationGrantType> resolveGrantTypes(final List<String> stringsGrantType) throws ForbiddenException {
+   private Set<AuthorizationGrantType> resolveGrantTypes(final Set<String> stringsGrantType) throws ForbiddenException {
       if (CollectionUtils.isEmpty(stringsGrantType)) return Collections.emptySet();
       return stringsGrantType.stream().filter(Objects::nonNull).map(s ->
            switch (s) {
@@ -97,7 +92,6 @@ public class ClientRegistrationController {
               case "urn:custom:grant-type:password" -> new AuthorizationGrantType("urn:custom:grant-type:password");
               default -> throw new ForbiddenException("Invalid grant type: "+s);
            }
-        )
-        .collect(Collectors.toSet());
+        ).collect(Collectors.toSet());
    }
 }

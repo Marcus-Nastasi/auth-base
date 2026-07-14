@@ -16,7 +16,7 @@ public class ResourceServerConfig {
    @Order(2)
    public SecurityFilterChain resourceServerSecurityFilterChain(final HttpSecurity http) {
       return http
-           .securityMatcher("/api/**")
+           .securityMatcher("/api/v1/users/**")
            .csrf(AbstractHttpConfigurer::disable)
            .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()

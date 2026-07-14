@@ -63,7 +63,7 @@ public class EmailConfirmationTokenPortImpl implements PersonalizedTokenPort {
          signedJWT.sign(new RSASSASigner(privateKey));
 
          return signedJWT.serialize();
-      } catch (JOSEException e) {
+      } catch (final JOSEException e) {
          throw new ForbiddenException("Failed to generate email confirmation token", e);
       }
    }
@@ -74,17 +74,14 @@ public class EmailConfirmationTokenPortImpl implements PersonalizedTokenPort {
          final var jwt = SignedJWT.parse(token);
          final var rsaVerifier = new RSASSAVerifier(publicKey);
 
-         // Verifica assinatura
          if (!jwt.verify(rsaVerifier))
             throw new ForbiddenException("Invalid token signature");
 
          final var currentDate = Date.from(Instant.now(Constants.CLOCK));
 
-         // Verifica expiração
          if (jwt.getJWTClaimsSet().getExpirationTime().before(currentDate))
             throw new ForbiddenException("Token expired");
 
-         // Verifica tipo
          final String typ = (String) jwt.getJWTClaimsSet().getClaim("typ");
          final String scope = (String) jwt.getJWTClaimsSet().getClaim("scope");
 
@@ -93,7 +90,8 @@ public class EmailConfirmationTokenPortImpl implements PersonalizedTokenPort {
          if (!"email.activate".equalsIgnoreCase(scope))
             throw new ForbiddenException("Invalid scope");
 
-      } catch (Exception e) {
+      } catch (final Exception e) {
+         if (e instanceof ForbiddenException fe) throw fe;
          throw new ForbiddenException("Invalid token format", e);
       }
    }
