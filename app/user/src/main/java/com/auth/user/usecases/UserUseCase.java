@@ -193,13 +193,11 @@ public class UserUseCase implements UserUseCasePort {
             Logger.info(LOG_CODE, "Sending confirmation e-mail");
             confirmationEmailSenderPort.send(u);
             Logger.info(LOG_CODE, "E-mail sent successfully");
-        }, NotFoundException::new);
+        }, () -> {throw new NotFoundException();});
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = {RuntimeException.class, Exception.class})
     private User create(final User user) throws UnprocessableEntityException {
-        if (user == null) throw new UnprocessableEntityException(Errors.COULD_NOT_SAVE_USER);
-
         if (user.getUserRole() == null) user.setUserRole(UserRole.USER);
 
         Logger.info(LOG_CODE, format("Creating user: %s", user.getEmail()), user);

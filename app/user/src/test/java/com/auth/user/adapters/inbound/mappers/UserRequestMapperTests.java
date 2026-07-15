@@ -17,7 +17,7 @@ final class UserRequestMapperTests {
       final var cpf = "04432842024";
       final var email = "test@gmail.com";
       final var userRequestDto = new UserRequestDto(
-              email, "12345678", "Marc", "Rol", cpf, LocalDate.of(2000, 10, 2), UserRole.ADMIN
+           email, "12345678", "Marc", "Rol", cpf, LocalDate.of(2000, 10, 2), UserRole.ADMIN
       );
 
       final var resp = assertDoesNotThrow(() -> mapper.toDomain(userRequestDto));
