@@ -24,6 +24,9 @@ import java.util.Date;
 @Component("emailConfirmationTokenPortImpl")
 public class EmailConfirmationTokenPortImpl implements PersonalizedTokenPort {
 
+   private static final String TKN_TYP = "email_confirmation";
+   private static final String TKN_SCP = "email.activate";
+
    private final RSAPrivateKey privateKey;
    private final RSAPublicKey publicKey;
    private final String kid;
@@ -49,8 +52,8 @@ public class EmailConfirmationTokenPortImpl implements PersonalizedTokenPort {
               .issuer(issuer)
               .claim("email", user.getEmail())
               .claim("cpf", user.getCpf())
-              .claim("scope", "email.activate")
-              .claim("typ", "email_confirmation")
+              .claim("scope", TKN_SCP)
+              .claim("typ", TKN_TYP)
               .issueTime(Date.from(now))
               .expirationTime(Date.from(now.plus(20, ChronoUnit.MINUTES)))
               .build();
@@ -85,9 +88,10 @@ public class EmailConfirmationTokenPortImpl implements PersonalizedTokenPort {
          final String typ = (String) jwt.getJWTClaimsSet().getClaim("typ");
          final String scope = (String) jwt.getJWTClaimsSet().getClaim("scope");
 
-         if (!"email_confirmation".equalsIgnoreCase(typ))
+         if (!TKN_TYP.equalsIgnoreCase(typ))
             throw new ForbiddenException("Invalid token type");
-         if (!"email.activate".equalsIgnoreCase(scope))
+
+         if (!TKN_SCP.equalsIgnoreCase(scope))
             throw new ForbiddenException("Invalid scope");
 
       } catch (final Exception e) {

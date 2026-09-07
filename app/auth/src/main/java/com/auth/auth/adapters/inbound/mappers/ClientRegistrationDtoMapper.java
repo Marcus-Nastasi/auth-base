@@ -21,11 +21,13 @@ public interface ClientRegistrationDtoMapper {
 
    ClientRegistrationDtoMapper INSTANCE = Mappers.getMapper(ClientRegistrationDtoMapper.class);
 
+   @Mapping(target = "appId", source = "client.id")
    @Mapping(target = "clientId", source = "client.clientId")
    @Mapping(target = "clientSecret", source = "clientSecret")
    @Mapping(target = "grantTypes", source = "client.authorizationGrantTypes", qualifiedByName = "getGrantTypes")
    @Mapping(target = "scopes", source = "client.scopes")
    @Mapping(target = "redirectUris", source = "client.redirectUris")
+   @Mapping(target = "message", constant = "Save your client_secret in a safe place, you cannot consult it later")
    ClientRegistrationResponse response(final RegisteredClient client, final UUID clientSecret);
 
    @Named(value = "getGrantTypes")

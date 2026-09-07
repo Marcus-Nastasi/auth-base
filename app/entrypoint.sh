@@ -29,4 +29,5 @@ export MAIL_PASSWORD=$(get_param "mail_password")
 export MAIL_TEAM=$(get_param "mail_team")
 
 echo "Segredos carregados. Iniciando aplicação..."
+
 exec java -jar ./application/application-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod

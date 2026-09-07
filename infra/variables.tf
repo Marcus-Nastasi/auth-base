@@ -7,7 +7,16 @@ variable "project_name" {
   type = string
   default = "auth-base"
 }
-variable "environment"  { type = string }
+
+variable "environment"  {
+  type = string
+
+  validation {
+    condition = contains(["dev","hom","prod"], var.environment)
+    error_message = "Environment var should  be dev, hom or prod"
+  }
+}
+
 variable "app_port" {
   type = number
   default = 8080
