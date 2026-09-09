@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 public class CustomPasswordGrantAuthenticationConverter implements AuthenticationConverter {
 
    @Override
-   public Authentication convert(final HttpServletRequest request) {
+   public Authentication convert(final HttpServletRequest request) throws OAuth2AuthenticationException {
       final var grantType = request.getParameter(OAuth2ParameterNames.GRANT_TYPE);
       if (!CustomPasswordGrantAuthenticationToken.GRANT_TYPE.getValue().equalsIgnoreCase(grantType))
          return null;
@@ -29,7 +29,11 @@ public class CustomPasswordGrantAuthenticationConverter implements Authenticatio
       if (clientPrincipal == null)
          throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
 
-      final RegisteredClient registeredClient = ((OAuth2ClientAuthenticationToken) clientPrincipal).getRegisteredClient();
+      RegisteredClient registeredClient = null;
+      if (clientPrincipal instanceof OAuth2ClientAuthenticationToken)
+         registeredClient = ((OAuth2ClientAuthenticationToken) clientPrincipal).getRegisteredClient();
+      else throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
+
       if (registeredClient == null) throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
 
       final var clientGrantType = registeredClient.getAuthorizationGrantTypes();
@@ -55,7 +59,7 @@ public class CustomPasswordGrantAuthenticationConverter implements Authenticatio
       return new CustomPasswordGrantAuthenticationToken(cpf, password, clientPrincipal, requestedScopes, Map.of("cpf", cpf));
    }
 
-   private void checkGrantTypes(final String requestGrantType, final Set<AuthorizationGrantType> clientGrantTypes) {
+   private void checkGrantTypes(final String requestGrantType, final Set<AuthorizationGrantType> clientGrantTypes) throws OAuth2AuthenticationException {
       final var clientGrantTypeStringSet = clientGrantTypes.stream()
               .filter(Objects::nonNull)
               .map(AuthorizationGrantType::getValue)
@@ -65,7 +69,7 @@ public class CustomPasswordGrantAuthenticationConverter implements Authenticatio
          throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT);
    }
 
-   private void checkClientScopes(final Set<String> clientScopes, final Set<String> requestedScopes) {
+   private void checkClientScopes(final Set<String> clientScopes, final Set<String> requestedScopes) throws OAuth2AuthenticationException {
       if (CollectionUtils.isEmpty(clientScopes))
          throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INSUFFICIENT_SCOPE);
 
