@@ -12,9 +12,9 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://iam.local
+          issuer-uri: http://localhost:8080
       kid: auth-base-kid
-      issuer: https://iam.local
+      issuer: http://localhost:8080
     key:
       public:
         path: /home/rolemberg/Documentos/Programming/projects/java/auth-base/app/public.pem

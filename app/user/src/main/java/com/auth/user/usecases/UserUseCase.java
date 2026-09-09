@@ -4,6 +4,7 @@ import com.auth.core.domain.PageResponse;
 import com.auth.core.domain.User;
 import com.auth.core.domain.enums.UserRole;
 import com.auth.core.domain.enums.UserStatus;
+import com.auth.core.exceptions.ForbiddenException;
 import com.auth.core.exceptions.InternalException;
 import com.auth.core.exceptions.NotFoundException;
 import com.auth.core.shared.Logger;
@@ -15,8 +16,10 @@ import com.auth.core.ports.outbound.user.FindUserPort;
 import com.auth.core.ports.outbound.user.SaveUserPort;
 import com.auth.core.shared.Constants;
 import com.auth.core.shared.Errors;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +28,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 import static java.lang.String.format;
+import static java.util.Optional.ofNullable;
 
 @Component
 public class UserUseCase implements UserUseCasePort {
@@ -32,11 +36,8 @@ public class UserUseCase implements UserUseCasePort {
     private static final String LOG_CODE = "USER-USE-CASE";
 
     private final FindUserPort findUserPort;
-
     private final SaveUserPort saveUserPort;
-
     private final PasswordEncoderPort passwordEncoderPort;
-
     private final ConfirmationEmailSenderPort confirmationEmailSenderPort;
 
     public UserUseCase(final FindUserPort findUserPort,
@@ -106,17 +107,19 @@ public class UserUseCase implements UserUseCasePort {
     @Transactional(readOnly = true)
     public User findByEmail(final String email) throws NotFoundException {
         Logger.info(LOG_CODE, format("Searching user by email: %s", email));
-
         return findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
     }
 
     @Override
     @Transactional(
+        isolation = Isolation.READ_COMMITTED,
         propagation = Propagation.NESTED,
         rollbackFor = {RuntimeException.class, Exception.class}
     )
     public User save(final User user) {
         Logger.info(LOG_CODE, "User save payload received");
+
+        if (user == null) throw new UnprocessableEntityException(Errors.USER_NULL);
 
         User processed;
 
@@ -132,17 +135,19 @@ public class UserUseCase implements UserUseCasePort {
     }
 
     @Override
-    @Transactional(rollbackFor = {RuntimeException.class, Exception.class})
+    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = {RuntimeException.class, Exception.class})
     public User activate(final String email, final UUID userId) throws NotFoundException, UnprocessableEntityException {
+        if (StringUtils.isBlank(email) || userId == null) {
+            Logger.error(LOG_CODE, "Email or userId cannot be null");
+            return null;
+        }
+
         Logger.info(LOG_CODE, format("Activating user: %s", email));
 
         final User user = findUserPort.findByEmail(email).orElseThrow(NotFoundException::new);
         Logger.info(LOG_CODE, "User found: ", user);
 
-//        if (!user.getId().equals(userId)) {
-//            log.warn("User found id is different than passed user id");
-//            throw new ForbiddenException();
-//        }
+        if (!userId.equals(user.getId())) throw new ForbiddenException();
 
         if (user.getStatus().getCode() == UserStatus.ACTIVE.getCode()) {
             Logger.info(LOG_CODE, "User is already active");
@@ -157,7 +162,7 @@ public class UserUseCase implements UserUseCasePort {
     }
 
     @Override
-    @Transactional(rollbackFor = {RuntimeException.class, Exception.class})
+    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = {RuntimeException.class, Exception.class})
     public User inactivate(final String email) throws NotFoundException {
         Logger.info(LOG_CODE, format("Inactivating user: %s", email));
 
@@ -173,6 +178,7 @@ public class UserUseCase implements UserUseCasePort {
     }
 
     @Override
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public void resendEmail(final String email) throws UnprocessableEntityException, NotFoundException {
         Logger.info(LOG_CODE, format("Resending email: %s", email));
 
@@ -186,15 +192,12 @@ public class UserUseCase implements UserUseCasePort {
 
             Logger.info(LOG_CODE, "Sending confirmation e-mail");
             confirmationEmailSenderPort.send(u);
-
             Logger.info(LOG_CODE, "E-mail sent successfully");
-        }, NotFoundException::new);
+        }, () -> {throw new NotFoundException();});
     }
 
-    @Transactional(rollbackFor = {RuntimeException.class, Exception.class})
+    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = {RuntimeException.class, Exception.class})
     private User create(final User user) throws UnprocessableEntityException {
-        if (user == null) throw new UnprocessableEntityException(Errors.COULD_NOT_SAVE_USER);
-
         if (user.getUserRole() == null) user.setUserRole(UserRole.USER);
 
         Logger.info(LOG_CODE, format("Creating user: %s", user.getEmail()), user);
@@ -218,7 +221,7 @@ public class UserUseCase implements UserUseCasePort {
         return newUser;
     }
 
-    @Transactional(rollbackFor = {NotFoundException.class, Exception.class})
+    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = {NotFoundException.class, Exception.class})
     private User update(final User user) throws InternalException {
         Logger.info(LOG_CODE, format("Updating user: %s", user.getEmail()), user);
 
@@ -229,7 +232,7 @@ public class UserUseCase implements UserUseCasePort {
 
         Logger.info(LOG_CODE, "Updating user...");
 
-        return Optional.ofNullable(saveUserPort.save(existingUser.update(user, moment))).map(u -> {
+        return ofNullable(saveUserPort.save(existingUser.update(user, moment))).map(u -> {
             Logger.info(LOG_CODE, "Successfully updated user: ", u);
             return u;
         }).orElseThrow(() -> {

@@ -5,8 +5,8 @@ import com.auth.core.domain.User;
 import com.auth.core.domain.enums.UserRole;
 import com.auth.core.domain.enums.UserStatus;
 import com.auth.core.exceptions.ForbiddenException;
+import com.auth.core.ports.outbound.auth.PersonalizedTokenPort;
 import com.auth.core.ports.inbound.auth.HttpInterceptor;
-import com.auth.core.ports.inbound.auth.TokenPort;
 import com.auth.core.ports.inbound.user.UserUseCasePort;
 import com.auth.user.adapters.inbound.input.UserRequestDto;
 import com.auth.user.adapters.inbound.input.UserUpdateRequestDto;
@@ -14,7 +14,6 @@ import com.auth.user.adapters.inbound.mappers.UserRequestMapper;
 import com.auth.user.adapters.inbound.mappers.UserResponseMapper;
 import com.auth.user.adapters.inbound.output.SuperSetResponseDto;
 import com.auth.user.adapters.inbound.output.UserByIdResponseDto;
-import com.auth0.jwt.interfaces.DecodedJWT;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +21,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,23 +35,25 @@ import static org.springframework.http.MediaType.TEXT_HTML_VALUE;
 
 @Validated
 @RestController
-@RequestMapping(value = "/api/v1/user")
+@RequestMapping(value = "/api/v1/users")
 public class UserController {
 
     private final UserUseCasePort useCase;
-
-    private final TokenPort tokenPort;
-
     private final HttpInterceptor idEqualsOrAdminInterceptor;
+    private final JwtDecoder jwtDecoder;
+    private final PersonalizedTokenPort emailConfirmationTokenPortImpl;
 
     @Autowired
     public UserController(final UserUseCasePort useCase,
-                          final TokenPort tokenPort,
                           @Qualifier("IdEqualsOrAdminInterceptor")
-                          final HttpInterceptor idEqualsOrAdminInterceptor) {
+                          final HttpInterceptor idEqualsOrAdminInterceptor,
+                          final JwtDecoder jwtDecoder,
+                          @Qualifier("emailConfirmationTokenPortImpl")
+                          final PersonalizedTokenPort emailConfirmationTokenPortImpl) {
         this.useCase = useCase;
-        this.tokenPort = tokenPort;
         this.idEqualsOrAdminInterceptor = idEqualsOrAdminInterceptor;
+        this.jwtDecoder = jwtDecoder;
+        this.emailConfirmationTokenPortImpl = emailConfirmationTokenPortImpl;
     }
 
     @GetMapping(produces = APPLICATION_JSON_VALUE)
@@ -88,10 +91,10 @@ public class UserController {
                 .page(result.page())
                 .size(result.size())
                 .nextPage(result.nextPage())
-                .nextPageLink(httpServletRequest.getRequestURL().toString() +"?"+ httpServletRequest.getQueryString())
+                .nextPageLink(httpServletRequest.getRequestURL().toString()+"?page="+(page+1)+"&size="+size)
                 .data(result.data().stream()
-                        .map(UserResponseMapper.INSTANCE::toUserByIdResponse)
-                        .collect(Collectors.toSet()))
+                    .map(UserResponseMapper.INSTANCE::toUserByIdResponse)
+                    .collect(Collectors.toSet()))
                 .build();
 
         return ResponseEntity.ok(response);
@@ -115,10 +118,12 @@ public class UserController {
     }
 
     @GetMapping(value = "/activate", produces = TEXT_HTML_VALUE)
-    public ResponseEntity<String> activate(@RequestParam("token") String token) {
+    public ResponseEntity<String> activate(@RequestParam("token") final String token) {
         try {
-            final DecodedJWT d = (DecodedJWT) tokenPort.validate(token);
-            final String email = d.getClaim("email").asString();
+            emailConfirmationTokenPortImpl.validate(token);
+
+            final Jwt d = jwtDecoder.decode(token);
+            final String email = d.getClaim("email");
             final UUID userId = UUID.fromString(d.getSubject());
 
             final User user = useCase.activate(email, userId);
@@ -146,9 +151,9 @@ public class UserController {
     @GetMapping(value = "/inactivate", produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<SuperSetResponseDto<UserByIdResponseDto>> inactivate(@RequestParam("email") String email,
                                                                                @RequestHeader(value = "Authorization") String token) {
-        final User fromEmail = useCase.findByEmail(email);
+        //final User fromEmail = useCase.findByEmail(email);
 
-        idEqualsOrAdminInterceptor.validate(new Object[]{fromEmail.getId(), token});
+        //idEqualsOrAdminInterceptor.validate(new Object[]{fromEmail.getId(), token});
 
         final User user = useCase.inactivate(email);
 

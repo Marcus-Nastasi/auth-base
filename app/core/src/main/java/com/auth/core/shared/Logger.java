@@ -13,13 +13,13 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.UUID;
 
 @Slf4j
 public final class Logger {
 
-    public Logger() {}
+    private Logger() {}
 
     private static final ObjectMapper objectMapper;
 
@@ -61,6 +61,9 @@ public final class Logger {
 
         @JsonProperty("time")
         private final Instant timestamp;
+
+        @JsonProperty("log_id")
+        private final UUID logId;
     }
 
     /**
@@ -76,13 +79,15 @@ public final class Logger {
                 .message(message)
                 .payload(payload)
                 .exception(throwable != null ? Arrays.toString(throwable.getStackTrace()) : null)
-                .timestamp(LocalDateTime.now(Constants.CLOCK).toInstant(Constants.ZONE_OFFSET))
+                .timestamp(Instant.now(Constants.CLOCK))
+                .logId(UUID.randomUUID())
                 .build();
 
         String jsonLog = null;
         try {
             jsonLog = objectMapper.writeValueAsString(loggerJson);
         } catch (final JsonProcessingException e) {
+            log.error("LOGGER: Error processing JSON on Logger: {}", e.getMessage());
             throw new RuntimeException(e.getMessage(), e);
         }
 

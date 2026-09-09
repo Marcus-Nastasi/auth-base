@@ -7,12 +7,12 @@ import lombok.*;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
 @Builder
 @ToString
+@EqualsAndHashCode(doNotUseGetters = true)
 public final class User implements Serializable {
 
     private UUID id;
@@ -42,7 +42,6 @@ public final class User implements Serializable {
     public static User newUser(final User user, final LocalDateTime moment) {
         user.setStatus(UserStatus.PENDING);
         user.setCreatedAt(moment);
-        user.setUpdatedAt(moment);
         return user;
     }
 
@@ -85,30 +84,6 @@ public final class User implements Serializable {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.inactivatedAt = inactivatedAt;
-    }
-
-    @Override
-    public boolean equals(Object object) {
-        if (this == object) return true;
-        if (object == null || getClass() != object.getClass()) return false;
-        User user = (User) object;
-        return Objects.equals(getId(), user.getId())
-                && Objects.equals(getEmail(), user.getEmail())
-                && Objects.equals(getCpf(), user.getCpf())
-                && Objects.equals(getPassword(), user.getPassword())
-                && Objects.equals(getFirstName(), user.getFirstName())
-                && Objects.equals(getLastName(), user.getLastName())
-                && Objects.equals(getBirthDate(), user.getBirthDate())
-                && Objects.equals(getUserRole(), user.getUserRole())
-                && Objects.equals(getStatus(), user.getStatus())
-                && Objects.equals(getCreatedAt(), user.getCreatedAt())
-                && Objects.equals(getUpdatedAt(), user.getUpdatedAt())
-                && Objects.equals(getInactivatedAt(), user.getInactivatedAt());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getId(), getEmail(), getCpf(), getPassword(), getFirstName(), getLastName(), getBirthDate(), getUserRole(), getStatus(), getCreatedAt(), getUpdatedAt(), getInactivatedAt());
     }
 
     public UUID getId() {

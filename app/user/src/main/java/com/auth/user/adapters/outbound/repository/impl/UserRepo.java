@@ -18,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,15 +26,12 @@ import java.time.LocalDate;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Component
 public class UserRepo implements FindUserPort, SaveUserPort {
 
     private static final String LOG_CODE = "USER-REPO";
-
-    private final Predicate<User> userActiveFilter = u -> u.getInactivatedAt() != null;
 
     private final UserJpaRepo userJpaRepo;
 
@@ -46,6 +44,7 @@ public class UserRepo implements FindUserPort, SaveUserPort {
     }
 
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS, isolation = Isolation.READ_COMMITTED)
     public Set<User> findAll(final int page,
                              final int size,
                              final String email,
@@ -70,19 +69,19 @@ public class UserRepo implements FindUserPort, SaveUserPort {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(isolation = Isolation.READ_COMMITTED, readOnly = true)
     public Optional<User> findById(final UUID id) {
         return userJpaRepo.findById(id).map(UserEntityMapper.INSTANCE::toDomain);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(isolation = Isolation.READ_COMMITTED, readOnly = true)
     public Optional<User> findByEmail(final String email) {
         return userJpaRepo.findByEmail(email).map(UserEntityMapper.INSTANCE::toDomain);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(isolation = Isolation.READ_COMMITTED, readOnly = true)
     public Optional<User> findUserByCpf(final String cpf) {
         return userJpaRepo.findUserByCpf(cpf).map(UserEntityMapper.INSTANCE::toDomain);
     }
@@ -95,9 +94,8 @@ public class UserRepo implements FindUserPort, SaveUserPort {
 
             final UserEntity savedUserEntity = entityManager.merge(userEntity);
 
-            if (savedUserEntity == null) {
+            if (savedUserEntity == null)
                 throw new InternalException(Errors.COULD_NOT_SAVE_USER);
-            }
 
             entityManager.flush();
 
