@@ -8,6 +8,8 @@ import java.util.Set;
 
 @JsonInclude
 public record ClientRegistrationResponse(
+        @JsonProperty("app_id")
+        String appId,
         @JsonProperty("client_id")
         String clientId,
         @JsonProperty("client_secret")
@@ -17,5 +19,7 @@ public record ClientRegistrationResponse(
         @JsonProperty("scopes")
         Set<String> scopes,
         @JsonProperty("redirect_uris")
-        Set<String> redirectUris
+        Set<String> redirectUris,
+        @JsonProperty("message")
+        String message
 ) implements Serializable {}

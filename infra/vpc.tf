@@ -46,7 +46,8 @@ resource "aws_internet_gateway" "main" {
   tags = {
     Env     = var.environment
     Project = var.project_name
-  }}
+  }
+}
 
 # Route table para subnets públicas
 resource "aws_route_table" "public" {

@@ -25,31 +25,33 @@ public final class PemUtils {
 
     private PemUtils() {}
 
-    public static RSAPrivateKey readPrivateKey(final String filename) throws Exception {
+    public static RSAPrivateKey readPrivateKey(final String filename) throws InternalException {
         final Path path = extractPath(filename);
         final byte[] file = getFile(path);
         final String key = extractBeginAndEnd(file);
 
-        byte[] bytes = null;
+        byte[] bytes;
         try {
             bytes = Base64.getDecoder().decode(key);
         } catch (final IllegalArgumentException e) {
             Logger.error(LOG_CODE, "Error decoding the key with Base64", key, e);
+            throw new InternalException(e.getMessage());
         }
 
         return RSAPrivateKey.class.cast(generateRSAKey(bytes, true));
     }
 
-    public static RSAPublicKey readPublicKey(final String filename) throws Exception {
+    public static RSAPublicKey readPublicKey(final String filename) throws InternalException {
         final Path path = extractPath(filename);
         final byte[] file = getFile(path);
         final String key = extractBeginAndEnd(file);
 
-        byte[] bytes = null;
+        byte[] bytes;
         try {
             bytes = Base64.getDecoder().decode(key);
         } catch (final IllegalArgumentException e) {
             Logger.error(LOG_CODE, "Error decoding the key with Base64", key, e);
+            throw new InternalException(e.getMessage());
         }
 
         return RSAPublicKey.class.cast(generateRSAKey(bytes, false));
@@ -64,7 +66,7 @@ public final class PemUtils {
         }
     }
 
-    private static byte[] getFile(final Path path) {
+    private static byte[] getFile(final Path path) throws InternalException {
         if (path == null) {
             Logger.error(LOG_CODE, "Path cannot be null");
             throw new InternalException("Path cannot be null");

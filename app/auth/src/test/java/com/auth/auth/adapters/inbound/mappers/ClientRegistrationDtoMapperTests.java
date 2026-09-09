@@ -31,6 +31,7 @@ final class ClientRegistrationDtoMapperTests {
    // -------------------------------------------------------------------------
    private RegisteredClient.Builder baseClientBuilder() {
       return RegisteredClient.withId(UUID.randomUUID().toString())
+           .id(UUID.randomUUID().toString())
            .clientId("client-abc")
            .clientIdIssuedAt(Instant.now())
            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
@@ -45,6 +46,18 @@ final class ClientRegistrationDtoMapperTests {
    @Nested
    @DisplayName("response()")
    class Response {
+
+      @Test
+      @DisplayName("deve mapear appId corretamente")
+      void shouldMapAppId() {
+         final RegisteredClient client = baseClientBuilder()
+                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                 .build();
+
+         final ClientRegistrationResponse response = mapper.response(client, UUID.randomUUID());
+
+         assertThat(response.appId()).isEqualTo(client.getId());
+      }
 
       @Test
       @DisplayName("deve mapear clientId corretamente")
@@ -156,6 +169,19 @@ final class ClientRegistrationDtoMapperTests {
               "https://app.example.com/callback",
               "https://app.example.com/other-callback"
          );
+      }
+
+      @Test
+      @DisplayName("deve mapear default message")
+      void shouldMapDefaultMessage() {
+         final RegisteredClient client = baseClientBuilder()
+                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                 .build();
+
+         final ClientRegistrationResponse response = mapper.response(client, UUID.randomUUID());
+
+         assertThat(response.message()).isNotNull();
+         assertThat(response.message()).isEqualTo("Save your client_secret in a safe place, you cannot consult it later");
       }
    }
 

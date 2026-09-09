@@ -151,9 +151,9 @@ public class UserController {
     @GetMapping(value = "/inactivate", produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<SuperSetResponseDto<UserByIdResponseDto>> inactivate(@RequestParam("email") String email,
                                                                                @RequestHeader(value = "Authorization") String token) {
-        final User fromEmail = useCase.findByEmail(email);
+        //final User fromEmail = useCase.findByEmail(email);
 
-        idEqualsOrAdminInterceptor.validate(new Object[]{fromEmail.getId(), token});
+        //idEqualsOrAdminInterceptor.validate(new Object[]{fromEmail.getId(), token});
 
         final User user = useCase.inactivate(email);
 

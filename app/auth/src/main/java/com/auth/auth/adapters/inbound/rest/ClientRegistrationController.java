@@ -36,13 +36,15 @@ public class ClientRegistrationController {
       this.passwordEncoderPort = passwordEncoderPort;
    }
 
+   // TODO: move this to use case and verify clientAuthenticationMethod setting logic
    @PostMapping
    @PreAuthorize("hasAuthority('SCOPE_client.create')")
    public ResponseEntity<Object> register(@RequestBody final ClientRegistrationRequest request) {
       final var clientId = UUID.randomUUID();
       final var clientSecret = UUID.randomUUID();
+      final var id = UUID.randomUUID();
 
-      final RegisteredClient.Builder clientBuilder = RegisteredClient.withId(UUID.randomUUID().toString())
+      final RegisteredClient.Builder clientBuilder = RegisteredClient.withId(id.toString())
            .clientId(clientId.toString())
            .clientSecret(passwordEncoderPort.encode(clientSecret.toString()))
            .clientName(request.clientName())
@@ -60,7 +62,8 @@ public class ClientRegistrationController {
          clientBuilder.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC);
       }
 
-      final var hasAuthorizationCode = isNotEmpty(request.grantTypes()) && request.grantTypes().contains("authorization_code");
+      final var hasAuthorizationCode = isNotEmpty(request.grantTypes())
+              && request.grantTypes().contains(AuthorizationGrantType.AUTHORIZATION_CODE.getValue());
 
       clientBuilder.clientSettings(ClientSettings.builder()
            .requireProofKey(hasAuthorizationCode)
